@@ -7,7 +7,7 @@ namespace api.Models
         public int Id { get; set; }
 
         public int ConversationId { get; set; }
-        public required Conversation Conversation { get; set; }
+        public Conversation Conversation { get; set; }
 
         // 发送者
         public int SenderId { get; set; }
@@ -15,7 +15,7 @@ namespace api.Models
 
         [Required]
         [MaxLength(1000)]
-        public required string Content { get; set; }
+        public string Content { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
