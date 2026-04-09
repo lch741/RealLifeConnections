@@ -10,6 +10,6 @@ namespace api.Models
         [MaxLength(50)]
         public required string Name { get; set; } // sports, art, etc.
 
-        public required List<UserInterest> UserInterests { get; set; } = new();
+        public List<UserInterest> UserInterests { get; set; } = new();
     }
 }
