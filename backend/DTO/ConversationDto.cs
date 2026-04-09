@@ -9,7 +9,7 @@ namespace backend.DTOs
     {
         public int ConversationId { get; set; }
         public int OtherUserId { get; set; }
-        public required string OtherUserName { get; set; }
+        public string OtherUserName { get; set; }
         public DateTime LastMessageAt { get; set; }
     }
 }
