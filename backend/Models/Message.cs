@@ -11,7 +11,7 @@ namespace api.Models
 
         // 发送者
         public int SenderId { get; set; }
-        public required AppUser Sender { get; set; }
+        public AppUser Sender { get; set; }
 
         [Required]
         [MaxLength(1000)]
