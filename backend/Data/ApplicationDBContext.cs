@@ -49,6 +49,17 @@ namespace backend.Data
             modelBuilder.Entity<AppUser>()
                 .HasIndex(u => u.UserName)
                 .IsUnique();
+
+            modelBuilder.Entity<InterestCategory>().HasData(
+                new InterestCategory { Id = 1, Name = "Sports" },
+                new InterestCategory { Id = 2, Name = "Art" },
+                new InterestCategory { Id = 3, Name = "Music" },
+                new InterestCategory { Id = 4, Name = "Technology" },
+                new InterestCategory { Id = 5, Name = "Gaming" },
+                new InterestCategory { Id = 6, Name = "Fitness" },
+                new InterestCategory { Id = 7, Name = "Travel" },
+                new InterestCategory { Id = 8, Name = "Other" }
+            );
         }
     }
 }
