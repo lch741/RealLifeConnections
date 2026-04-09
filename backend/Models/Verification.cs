@@ -7,7 +7,7 @@ namespace api.Models
         public int Id { get; set; }
 
         public int UserId { get; set; }
-        public required AppUser User { get; set; }
+        public AppUser User { get; set; }
 
         // Camera selfie
         [Required]
