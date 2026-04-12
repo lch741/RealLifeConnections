@@ -1,4 +1,7 @@
 using backend.Data;
+using backend.Interfaces;
+using backend.Repository;
+using backend.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -38,6 +41,9 @@ builder.Services.AddSwaggerGen(option =>
         }
     });
 });
+
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 // Controllers
 builder.Services.AddControllers();
