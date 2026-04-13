@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using backend.DTOs;
 using backend.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controllers
 {
-[ApiController]
+    [Authorize]
+    [ApiController]
     [Route("api/chat")]
     public class ChatController : ControllerBase
     {
@@ -17,6 +20,17 @@ namespace backend.Controllers
         public ChatController(IChatService service)
         {
             _service = service;
+        }
+
+        private int GetCurrentUserId()
+        {
+            var rawUserId = 
+                User.FindFirstValue(ClaimTypes.NameIdentifier)??
+                User.FindFirstValue("sub");
+            if (!int.TryParse(rawUserId, out int userId))
+                throw new InvalidOperationException("Invalid user ID");
+
+            return userId;
         }
 
 
@@ -28,7 +42,7 @@ namespace backend.Controllers
                 if (dto == null || string.IsNullOrWhiteSpace(dto.Content))
                     return BadRequest("Message content is required");
 
-                int userId = 1; // TODO: 从JWT获取
+                int userId = GetCurrentUserId();
 
                 await _service.SendMessageAsync(userId, dto);
 
@@ -46,7 +60,7 @@ namespace backend.Controllers
         {
             try
             {
-                int userId = 1;
+                int userId = GetCurrentUserId();
 
                 var messages = await _service.GetMessagesAsync(userId, otherUserId);
 
@@ -63,7 +77,7 @@ namespace backend.Controllers
         {
             try
             {
-                int userId = 1;
+                int userId = GetCurrentUserId();
 
                 var convos = await _service.GetConversationsAsync(userId);
 
