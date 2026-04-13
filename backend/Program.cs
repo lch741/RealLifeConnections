@@ -44,6 +44,8 @@ builder.Services.AddSwaggerGen(option =>
 
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IUserInterface, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Controllers
 builder.Services.AddControllers();
