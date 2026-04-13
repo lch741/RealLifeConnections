@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using backend.DTOs;
 
 namespace backend.Interfaces
@@ -6,5 +7,10 @@ namespace backend.Interfaces
     {
         Task<AuthResponseDto> RegisterAsync(RegisterUserDto dto);
         Task<AuthResponseDto> LoginAsync(LoginUserDto dto);
+        Task<UserProfileDto> GetProfileAsync(ClaimsPrincipal principal);
+        Task<UserProfileDto> UpdateProfileAsync(ClaimsPrincipal principal, UpdateProfileDto dto);
+        Task<UserProfileDto> SaveAvatarAsync(ClaimsPrincipal principal, SaveAvatarDto dto);
+        Task<FaceVerificationResponseDto> VerifyFaceAsync(ClaimsPrincipal principal, FaceVerificationRequestDto dto);
+        Task<List<MatchCandidateDto>> GetMatchesAsync(ClaimsPrincipal principal);
     }
 }

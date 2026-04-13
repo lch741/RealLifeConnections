@@ -12,11 +12,16 @@ namespace backend.Service
     public class UserService : IUserService
     {
         private readonly IConfiguration _configuration;
+        private readonly IAzureFaceService _azureFaceService;
         private readonly IUserInterface _userRepository;
 
-        public UserService(IConfiguration configuration, IUserInterface userRepository)
+        public UserService(
+            IConfiguration configuration,
+            IAzureFaceService azureFaceService,
+            IUserInterface userRepository)
         {
             _configuration = configuration;
+            _azureFaceService = azureFaceService;
             _userRepository = userRepository;
         }
 
@@ -65,6 +70,140 @@ namespace backend.Service
             return BuildAuthResponse(user, categories, "Login successful.");
         }
 
+        public async Task<UserProfileDto> GetProfileAsync(ClaimsPrincipal principal)
+        {
+            var user = await GetCurrentUserAsync(principal);
+            var categories = await _userRepository.GetInterestCategoriesAsync();
+            return MapProfile(user, categories);
+        }
+
+        public async Task<UserProfileDto> UpdateProfileAsync(ClaimsPrincipal principal, UpdateProfileDto dto)
+        {
+            var user = await GetCurrentUserAsync(principal);
+            var categories = await _userRepository.GetInterestCategoriesAsync();
+
+            if (!string.IsNullOrWhiteSpace(dto.UserName) &&
+                !string.Equals(dto.UserName.Trim(), user.UserName, StringComparison.OrdinalIgnoreCase) &&
+                await _userRepository.UserNameExistsAsync(dto.UserName.Trim()))
+            {
+                throw new InvalidOperationException("Username already exists.");
+            }
+
+            ValidateSelections(dto.InterestSelections, categories);
+
+            var updatedUser = await _userRepository.UpdateProfileAsync(user, dto);
+            return MapProfile(updatedUser, categories);
+        }
+
+        public async Task<UserProfileDto> SaveAvatarAsync(ClaimsPrincipal principal, SaveAvatarDto dto)
+        {
+            var user = await GetCurrentUserAsync(principal);
+            var categories = await _userRepository.GetInterestCategoriesAsync();
+            user.IsVerified = false;
+            var updatedUser = await _userRepository.SaveAvatarUrlAsync(user, dto.AvatarUrl.Trim());
+            await _userRepository.AddVerificationAsync(new Verification
+            {
+                UserId = updatedUser.Id,
+                ImageUrl = dto.AvatarUrl.Trim(),
+                Status = "pending"
+            });
+
+            updatedUser = await _userRepository.GetUserByIdAsync(updatedUser.Id) ?? updatedUser;
+            return MapProfile(updatedUser, categories);
+        }
+
+        public async Task<FaceVerificationResponseDto> VerifyFaceAsync(ClaimsPrincipal principal, FaceVerificationRequestDto dto)
+        {
+            var user = await GetCurrentUserAsync(principal);
+
+            if (string.IsNullOrWhiteSpace(user.ProfileImageUrl))
+            {
+                throw new InvalidOperationException("Avatar must be uploaded before face verification.");
+            }
+
+            var azureResult = await _azureFaceService.VerifyFacesAsync(user.ProfileImageUrl, dto.LiveCaptureUrl.Trim());
+            var status = azureResult.IsIdentical ? "approved" : "rejected";
+
+            user.IsVerified = azureResult.IsIdentical;
+            await _userRepository.AddVerificationAsync(new Verification
+            {
+                UserId = user.Id,
+                ImageUrl = dto.LiveCaptureUrl.Trim(),
+                Status = status
+            });
+
+            await _userRepository.SaveAvatarUrlAsync(user, user.ProfileImageUrl);
+
+            return new FaceVerificationResponseDto
+            {
+                Status = status,
+                Message = azureResult.IsIdentical
+                    ? "Face verification passed. Matching is now unlocked."
+                    : "Face verification failed. Matching remains locked.",
+                IsVerified = azureResult.IsIdentical,
+                Confidence = azureResult.Confidence
+            };
+        }
+
+        public async Task<List<MatchCandidateDto>> GetMatchesAsync(ClaimsPrincipal principal)
+        {
+            var user = await GetCurrentUserAsync(principal);
+            if (!user.IsVerified)
+            {
+                throw new InvalidOperationException("Face verification is required before matching.");
+            }
+
+            var categories = await _userRepository.GetInterestCategoriesAsync();
+            var candidates = await _userRepository.GetVerifiedMatchCandidatesAsync(user.Id);
+            var currentInterests = user.Interests
+                .GroupBy(interest => interest.CategoryId)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.Select(interest => interest.SubCategory).ToHashSet(StringComparer.OrdinalIgnoreCase));
+
+            return candidates
+                .Select(candidate =>
+                {
+                    var sharedGroups = candidate.Interests
+                        .Where(interest => currentInterests.ContainsKey(interest.CategoryId)
+                            && currentInterests[interest.CategoryId].Contains(interest.SubCategory))
+                        .GroupBy(interest => interest.CategoryId)
+                        .Select(group => new RegisterInterestResultDto
+                        {
+                            CategoryId = group.Key,
+                            CategoryName = categories.First(category => category.Id == group.Key).Name,
+                            Interests = group.Select(interest => interest.SubCategory).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                        })
+                        .ToList();
+
+                    return new MatchCandidateDto
+                    {
+                        UserName = candidate.UserName,
+                        Bio = candidate.Bio,
+                        AvatarUrl = candidate.ProfileImageUrl,
+                        SharedInterests = sharedGroups
+                    };
+                })
+                .Where(candidate => candidate.SharedInterests.Count > 0)
+                .OrderByDescending(candidate => candidate.SharedInterests.Sum(group => group.Interests.Count))
+                .ToList();
+        }
+
+        private async Task<AppUser> GetCurrentUserAsync(ClaimsPrincipal principal)
+        {
+            var userIdValue = principal.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? throw new UnauthorizedAccessException("User identity is missing.");
+
+            if (!int.TryParse(userIdValue, out var userId))
+            {
+                throw new UnauthorizedAccessException("User identity is invalid.");
+            }
+
+            return await _userRepository.GetUserByIdAsync(userId)
+                ?? throw new UnauthorizedAccessException("User not found.");
+        }
+
         private AuthResponseDto BuildAuthResponse(
             AppUser user,
             List<InterestCategory> categories,
@@ -80,20 +219,45 @@ namespace backend.Service
                     UserName = user.UserName,
                     Bio = user.Bio,
                     ProfileImageUrl = user.ProfileImageUrl,
-                    InterestSelections = user.Interests
-                        .GroupBy(interest => interest.CategoryId)
-                        .OrderBy(group => group.Key)
-                        .Select(group => new RegisterInterestResultDto
-                        {
-                            CategoryId = group.Key,
-                            CategoryName = categories.First(category => category.Id == group.Key).Name,
-                            Interests = group
-                                .Select(interest => interest.SubCategory)
-                                .ToList()
-                        })
-                        .ToList()
+                    InterestSelections = GroupInterests(user.Interests, categories)
                 }
             };
+        }
+
+        private UserProfileDto MapProfile(AppUser user, List<InterestCategory> categories)
+        {
+            var latestStatus = user.Verifications
+                .OrderByDescending(verification => verification.CreatedAt)
+                .Select(verification => verification.Status)
+                .FirstOrDefault() ?? "pending";
+
+            return new UserProfileDto
+            {
+                Email = user.Email,
+                UserName = user.UserName,
+                Bio = user.Bio,
+                AvatarUrl = user.ProfileImageUrl,
+                IsVerified = user.IsVerified,
+                VerificationStatus = latestStatus,
+                CanMatch = user.IsVerified,
+                InterestSelections = GroupInterests(user.Interests, categories)
+            };
+        }
+
+        private static List<RegisterInterestResultDto> GroupInterests(
+            IEnumerable<UserInterest> interests,
+            List<InterestCategory> categories)
+        {
+            return interests
+                .GroupBy(interest => interest.CategoryId)
+                .OrderBy(group => group.Key)
+                .Select(group => new RegisterInterestResultDto
+                {
+                    CategoryId = group.Key,
+                    CategoryName = categories.First(category => category.Id == group.Key).Name,
+                    Interests = group.Select(interest => interest.SubCategory).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                })
+                .ToList();
         }
 
         private static void ValidateSelections(
@@ -150,6 +314,7 @@ namespace backend.Service
             {
                 new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.Email),
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new("username", user.UserName)
             };
 
