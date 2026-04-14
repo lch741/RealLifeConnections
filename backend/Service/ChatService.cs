@@ -1,8 +1,9 @@
 using backend.DTOs;
 using backend.Data;
 using backend.Interfaces;
-using api.Models;
 using api.DTOs;
+using api.Models;
+using backend.Mapper;
 
 namespace backend.Service
 {
@@ -43,25 +44,14 @@ namespace backend.Service
 
             var messages = await _repo.GetMessagesAsync(convo.Id);
 
-            return messages.Select(m => new MessageResponseDto
-            {
-                Id = m.Id,
-                SenderId = m.SenderId,
-                Content = m.Content,
-                CreatedAt = m.CreatedAt
-            }).ToList();
+            return messages.Select(ChatMapper.ToMessageResponse).ToList();
         }
 
         public async Task<List<ConversationDto>> GetConversationsAsync(int userId)
         {
             var convos = await _repo.GetUserConversationsAsync(userId);
 
-            return convos.Select(c => new ConversationDto
-            {
-                ConversationId = c.Id,
-                OtherUserId = c.User1Id == userId ? c.User2Id : c.User1Id,
-                LastMessageAt = c.LastMessageAt
-            }).ToList();
+            return convos.Select(conversation => ChatMapper.ToConversation(conversation, userId)).ToList();
         }
     }
 }

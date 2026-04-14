@@ -5,6 +5,7 @@ using System.Text;
 using api.Models;
 using backend.DTOs;
 using backend.Interfaces;
+using backend.Mapper;
 using Microsoft.IdentityModel.Tokens;
 
 namespace backend.Service
@@ -53,7 +54,7 @@ namespace backend.Service
             };
 
             var createdUser = await _userRepository.CreateUserAsync(user, dto.InterestSelections);
-            return BuildAuthResponse(createdUser, categories, "Registration successful.");
+            return AuthMapper.ToAuthResponse(createdUser, categories, "Registration successful.", GenerateJwtToken(createdUser));
         }
 
         public async Task<AuthResponseDto> LoginAsync(LoginUserDto dto)
@@ -67,14 +68,14 @@ namespace backend.Service
             }
 
             var categories = await _userRepository.GetInterestCategoriesAsync();
-            return BuildAuthResponse(user, categories, "Login successful.");
+            return AuthMapper.ToAuthResponse(user, categories, "Login successful.", GenerateJwtToken(user));
         }
 
         public async Task<UserProfileDto> GetProfileAsync(ClaimsPrincipal principal)
         {
             var user = await GetCurrentUserAsync(principal);
             var categories = await _userRepository.GetInterestCategoriesAsync();
-            return MapProfile(user, categories);
+            return ProfileMapper.ToUserProfile(user, categories);
         }
 
         public async Task<UserProfileDto> UpdateProfileAsync(ClaimsPrincipal principal, UpdateProfileDto dto)
@@ -92,7 +93,7 @@ namespace backend.Service
             ValidateSelections(dto.InterestSelections, categories);
 
             var updatedUser = await _userRepository.UpdateProfileAsync(user, dto);
-            return MapProfile(updatedUser, categories);
+            return ProfileMapper.ToUserProfile(updatedUser, categories);
         }
 
         public async Task<UserProfileDto> SaveAvatarAsync(ClaimsPrincipal principal, SaveAvatarDto dto)
@@ -109,7 +110,7 @@ namespace backend.Service
             });
 
             updatedUser = await _userRepository.GetUserByIdAsync(updatedUser.Id) ?? updatedUser;
-            return MapProfile(updatedUser, categories);
+            return ProfileMapper.ToUserProfile(updatedUser, categories);
         }
 
         public async Task<FaceVerificationResponseDto> VerifyFaceAsync(ClaimsPrincipal principal, FaceVerificationRequestDto dto)
@@ -134,15 +135,7 @@ namespace backend.Service
 
             await _userRepository.SaveAvatarUrlAsync(user, user.ProfileImageUrl);
 
-            return new FaceVerificationResponseDto
-            {
-                Status = status,
-                Message = azureResult.IsIdentical
-                    ? "Face verification passed. Matching is now unlocked."
-                    : "Face verification failed. Matching remains locked.",
-                IsVerified = azureResult.IsIdentical,
-                Confidence = azureResult.Confidence
-            };
+            return VerificationMapper.ToFaceVerificationResponse(azureResult);
         }
 
         public async Task<List<MatchCandidateDto>> GetMatchesAsync(ClaimsPrincipal principal)
@@ -162,28 +155,7 @@ namespace backend.Service
                     group => group.Select(interest => interest.SubCategory).ToHashSet(StringComparer.OrdinalIgnoreCase));
 
             return candidates
-                .Select(candidate =>
-                {
-                    var sharedGroups = candidate.Interests
-                        .Where(interest => currentInterests.ContainsKey(interest.CategoryId)
-                            && currentInterests[interest.CategoryId].Contains(interest.SubCategory))
-                        .GroupBy(interest => interest.CategoryId)
-                        .Select(group => new RegisterInterestResultDto
-                        {
-                            CategoryId = group.Key,
-                            CategoryName = categories.First(category => category.Id == group.Key).Name,
-                            Interests = group.Select(interest => interest.SubCategory).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-                        })
-                        .ToList();
-
-                    return new MatchCandidateDto
-                    {
-                        UserName = candidate.UserName,
-                        Bio = candidate.Bio,
-                        AvatarUrl = candidate.ProfileImageUrl,
-                        SharedInterests = sharedGroups
-                    };
-                })
+                .Select(candidate => MatchingMapper.ToMatchCandidate(candidate, currentInterests, categories))
                 .Where(candidate => candidate.SharedInterests.Count > 0)
                 .OrderByDescending(candidate => candidate.SharedInterests.Sum(group => group.Interests.Count))
                 .ToList();
@@ -202,62 +174,6 @@ namespace backend.Service
 
             return await _userRepository.GetUserByIdAsync(userId)
                 ?? throw new UnauthorizedAccessException("User not found.");
-        }
-
-        private AuthResponseDto BuildAuthResponse(
-            AppUser user,
-            List<InterestCategory> categories,
-            string message)
-        {
-            return new AuthResponseDto
-            {
-                Message = message,
-                Token = GenerateJwtToken(user),
-                User = new AuthUserDto
-                {
-                    Email = user.Email,
-                    UserName = user.UserName,
-                    Bio = user.Bio,
-                    ProfileImageUrl = user.ProfileImageUrl,
-                    InterestSelections = GroupInterests(user.Interests, categories)
-                }
-            };
-        }
-
-        private UserProfileDto MapProfile(AppUser user, List<InterestCategory> categories)
-        {
-            var latestStatus = user.Verifications
-                .OrderByDescending(verification => verification.CreatedAt)
-                .Select(verification => verification.Status)
-                .FirstOrDefault() ?? "pending";
-
-            return new UserProfileDto
-            {
-                Email = user.Email,
-                UserName = user.UserName,
-                Bio = user.Bio,
-                AvatarUrl = user.ProfileImageUrl,
-                IsVerified = user.IsVerified,
-                VerificationStatus = latestStatus,
-                CanMatch = user.IsVerified,
-                InterestSelections = GroupInterests(user.Interests, categories)
-            };
-        }
-
-        private static List<RegisterInterestResultDto> GroupInterests(
-            IEnumerable<UserInterest> interests,
-            List<InterestCategory> categories)
-        {
-            return interests
-                .GroupBy(interest => interest.CategoryId)
-                .OrderBy(group => group.Key)
-                .Select(group => new RegisterInterestResultDto
-                {
-                    CategoryId = group.Key,
-                    CategoryName = categories.First(category => category.Id == group.Key).Name,
-                    Interests = group.Select(interest => interest.SubCategory).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-                })
-                .ToList();
         }
 
         private static void ValidateSelections(

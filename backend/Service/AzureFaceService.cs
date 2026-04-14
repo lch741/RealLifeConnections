@@ -8,6 +8,7 @@ namespace backend.Service
 {
     public class AzureFaceService : IAzureFaceService
     {
+        private const string JsonMediaType = "application/json";
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
 
@@ -32,7 +33,7 @@ namespace backend.Service
                 $"{endpoint.TrimEnd('/')}/face/v1.0/verify");
 
             request.Headers.Add("Ocp-Apim-Subscription-Key", apiKey);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonMediaType));
             request.Content = new StringContent(
                 JsonSerializer.Serialize(new
                 {
@@ -40,7 +41,7 @@ namespace backend.Service
                     faceId2 = liveFaceId
                 }),
                 Encoding.UTF8,
-                "application/json");
+                JsonMediaType);
 
             using var response = await _httpClient.SendAsync(request);
             var payload = await response.Content.ReadAsStringAsync();
@@ -70,11 +71,11 @@ namespace backend.Service
                 $"{endpoint.TrimEnd('/')}/face/v1.2/detect?returnFaceId=true&recognitionModel=recognition_04&detectionModel=detection_03");
 
             request.Headers.Add("Ocp-Apim-Subscription-Key", apiKey);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(JsonMediaType));
             request.Content = new StringContent(
                 JsonSerializer.Serialize(new { url = imageUrl }),
                 Encoding.UTF8,
-                "application/json");
+                JsonMediaType);
 
             using var response = await _httpClient.SendAsync(request);
             var payload = await response.Content.ReadAsStringAsync();
