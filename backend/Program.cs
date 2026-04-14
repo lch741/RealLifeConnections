@@ -46,7 +46,10 @@ builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserInterface, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddHttpClient<IAzureFaceService, AzureFaceService>();
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddScoped<IAzureFaceService, MockAzureFaceService>();
+else
+    builder.Services.AddHttpClient<IAzureFaceService, AzureFaceService>();
 
 // Controllers
 builder.Services.AddControllers();
