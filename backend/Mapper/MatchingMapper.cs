@@ -7,7 +7,7 @@ namespace backend.Mapper
     {
         public static MatchCandidateDto ToMatchCandidate(
             AppUser candidate,
-            IReadOnlyDictionary<int, HashSet<string>> currentInterests,
+            HashSet<string> currentInterests,
             List<InterestCategory> categories)
         {
             return new MatchCandidateDto

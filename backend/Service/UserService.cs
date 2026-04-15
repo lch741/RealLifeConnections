@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using api.Models;
 using backend.DTOs;
+using backend.Helper;
 using backend.Interfaces;
 using backend.Mapper;
 using Microsoft.IdentityModel.Tokens;
@@ -150,10 +151,9 @@ namespace backend.Service
             var categories = await _userRepository.GetInterestCategoriesAsync();
             var candidates = await _userRepository.GetVerifiedMatchCandidatesAsync(user.Id);
             var currentInterests = user.Interests
-                .GroupBy(interest => interest.CategoryId)
-                .ToDictionary(
-                    group => group.Key,
-                    group => group.Select(interest => interest.SubCategory).ToHashSet(StringComparer.OrdinalIgnoreCase));
+                .Select(interest => MatchHelper.NormalizeInterest(interest.SubCategory))
+                .Where(value => value.Length > 0)
+                .ToHashSet(StringComparer.Ordinal);
 
             return candidates
                 .Select(candidate => MatchingMapper.ToMatchCandidate(candidate, currentInterests, categories))
