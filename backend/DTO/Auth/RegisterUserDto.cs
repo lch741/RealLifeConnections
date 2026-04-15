@@ -16,6 +16,9 @@ namespace backend.DTOs
         [MinLength(6)]
         public required string Password { get; set; }
 
+        [Required]
+        public required string City { get; set; }
+
         [MaxLength(300)]
         public string? Bio { get; set; }
 

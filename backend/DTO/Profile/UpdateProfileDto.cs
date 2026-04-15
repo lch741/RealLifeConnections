@@ -10,6 +10,9 @@ namespace backend.DTOs
         [MaxLength(300)]
         public string? Bio { get; set; }
 
+        [Required]
+        public required string City { get; set; }
+
         public List<RegisterInterestSelectionDto> InterestSelections { get; set; } = new();
     }
 }

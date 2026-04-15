@@ -17,6 +17,7 @@ namespace backend.Mapper
                 Email = user.Email,
                 UserName = user.UserName,
                 Bio = user.Bio,
+                City = user.City,
                 AvatarUrl = user.ProfileImageUrl,
                 IsVerified = user.IsVerified,
                 VerificationStatus = latestStatus,
@@ -32,6 +33,7 @@ namespace backend.Mapper
                 user.UserName = dto.UserName.Trim();
             }
 
+            user.City = dto.City;
             user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
             return user;
         }

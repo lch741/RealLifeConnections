@@ -49,6 +49,7 @@ namespace backend.Service
                 Email = normalizedEmail,
                 UserName = normalizedUserName,
                 PasswordHash = HashPassword(dto.Password),
+                City = dto.City,
                 Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim(),
                 ProfileImageUrl = string.IsNullOrWhiteSpace(dto.ProfileImageUrl) ? null : dto.ProfileImageUrl.Trim()
             };

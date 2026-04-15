@@ -19,6 +19,9 @@ namespace api.Models
         [Required]
         public required string PasswordHash { get; set; }
 
+        // City (default "online")
+        public string City { get; set; } = "online";
+
         // Description
         [MaxLength(300)]
         public string? Bio { get; set; }

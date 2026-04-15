@@ -26,6 +26,7 @@ namespace backend.Mapper
                 Email = user.Email,
                 UserName = user.UserName,
                 Bio = user.Bio,
+                City = user.City,
                 ProfileImageUrl = user.ProfileImageUrl,
                 InterestSelections = InterestMapper.ToInterestResults(user.Interests, categories)
             };

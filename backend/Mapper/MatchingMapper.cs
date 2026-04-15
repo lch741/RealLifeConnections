@@ -14,6 +14,7 @@ namespace backend.Mapper
             {
                 UserName = candidate.UserName,
                 Bio = candidate.Bio,
+                City = candidate.City,
                 AvatarUrl = candidate.ProfileImageUrl,
                 SharedInterests = InterestMapper.ToSharedInterestResults(candidate.Interests, currentInterests, categories)
             };
