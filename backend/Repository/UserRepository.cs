@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.Repository
 {
-    public class UserRepository : IUserInterface
+    public class UserRepository : IUserRepository
     {
         private readonly ApplicationDBContext _context;
 
