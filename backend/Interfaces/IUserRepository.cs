@@ -17,6 +17,6 @@ namespace backend.Interfaces
         Task<AppUser> SaveAvatarUrlAsync(AppUser user, string avatarUrl);
         Task<Verification> AddVerificationAsync(Verification verification);
         Task<List<AppUser>> GetVerifiedMatchCandidatesAsync(int userId);
-        Task<List<SearchingCandidateDto>> GetVerifiedCandidatesAsync(UserQueryObject queryObject);
+        Task<List<AppUser>> SearchCandidatesAsync(int userId, UserQueryObject queryObject);
     }
 }

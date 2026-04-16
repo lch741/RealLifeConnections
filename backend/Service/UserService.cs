@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using api.Models;
+using backend.DTO.Matching;
 using backend.DTOs;
 using backend.Helper;
 using backend.Interfaces;
@@ -15,12 +16,12 @@ namespace backend.Service
     {
         private readonly IConfiguration _configuration;
         private readonly IAzureFaceService _azureFaceService;
-        private readonly IUserInterface _userRepository;
+        private readonly IUserRepository _userRepository;
 
         public UserService(
             IConfiguration configuration,
             IAzureFaceService azureFaceService,
-            IUserInterface userRepository)
+            IUserRepository userRepository)
         {
             _configuration = configuration;
             _azureFaceService = azureFaceService;
@@ -280,6 +281,23 @@ namespace backend.Service
                 expectedHash.Length);
 
             return CryptographicOperations.FixedTimeEquals(actualHash, expectedHash);
+        }
+
+        public async Task<List<SearchingCandidateDto>> SearchMatchesAsync(ClaimsPrincipal principal, UserQueryObject queryObject)
+        {
+            var user = await GetCurrentUserAsync(principal);
+            if (!user.IsVerified)
+            {
+                throw new InvalidOperationException("Face verification is required before matching.");
+            }
+
+            var categories = await _userRepository.GetInterestCategoriesAsync();
+            var candidates = await _userRepository.SearchCandidatesAsync(user.Id, queryObject);
+
+            return candidates
+                .Select(candidate => MatchingMapper.ToSearchingCandidate(candidate, categories))
+                .ToList();
+
         }
     }
 }

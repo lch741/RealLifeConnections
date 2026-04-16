@@ -1,5 +1,6 @@
 using backend.DTOs;
 using api.Models;
+using backend.DTO.Matching;
 
 namespace backend.Mapper
 {
@@ -17,6 +18,20 @@ namespace backend.Mapper
                 City = candidate.City,
                 AvatarUrl = candidate.ProfileImageUrl,
                 SharedInterests = InterestMapper.ToSharedInterestResults(candidate.Interests, currentInterests, categories)
+            };
+        }
+
+        public static SearchingCandidateDto ToSearchingCandidate(
+            AppUser candidate,
+            List<InterestCategory> categories)
+        {
+            return new SearchingCandidateDto
+            {
+                UserName = candidate.UserName,
+                Bio = candidate.Bio,
+                City = candidate.City,
+                AvatarUrl = candidate.ProfileImageUrl,
+                Interests = InterestMapper.ToInterestResults(candidate.Interests, categories)
             };
         }
     }
