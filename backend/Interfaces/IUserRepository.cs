@@ -1,9 +1,11 @@
 using api.Models;
+using backend.DTO.Matching;
 using backend.DTOs;
+using backend.Helper;
 
 namespace backend.Interfaces
 {
-    public interface IUserInterface
+    public interface IUserRepository
     {
         Task<bool> EmailExistsAsync(string email);
         Task<bool> UserNameExistsAsync(string userName);
@@ -15,5 +17,6 @@ namespace backend.Interfaces
         Task<AppUser> SaveAvatarUrlAsync(AppUser user, string avatarUrl);
         Task<Verification> AddVerificationAsync(Verification verification);
         Task<List<AppUser>> GetVerifiedMatchCandidatesAsync(int userId);
+        Task<List<AppUser>> SearchCandidatesAsync(int userId, UserQueryObject queryObject);
     }
 }

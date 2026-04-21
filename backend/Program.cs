@@ -44,7 +44,7 @@ builder.Services.AddSwaggerGen(option =>
 
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
-builder.Services.AddScoped<IUserInterface, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 if (builder.Environment.IsDevelopment())
     builder.Services.AddScoped<IAzureFaceService, MockAzureFaceService>();

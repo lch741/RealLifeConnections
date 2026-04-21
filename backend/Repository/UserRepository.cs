@@ -1,12 +1,14 @@
 using api.Models;
 using backend.Data;
+using backend.DTO.Matching;
 using backend.DTOs;
+using backend.Helper;
 using backend.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Repository
 {
-    public class UserRepository : IUserInterface
+    public class UserRepository : IUserRepository
     {
         private readonly ApplicationDBContext _context;
 
@@ -121,6 +123,47 @@ namespace backend.Repository
                 .Include(user => user.Verifications)
                 .Where(user => user.Id != userId && user.IsVerified)
                 .OrderBy(user => user.UserName)
+                .ToListAsync();
+        }
+
+        public async Task<List<AppUser>> SearchCandidatesAsync(int userId, UserQueryObject queryObject)
+        {
+            var pageNumber = queryObject.PageNumber < 1 ? 1 : queryObject.PageNumber;
+            var pageSize = queryObject.PageSize <= 0 ? 20 : queryObject.PageSize;
+
+            var candidatesQuery = _context.Users
+                .AsNoTracking()
+                .Include(user => user.Interests)
+                .ThenInclude(interest => interest.Category)
+                .Where(user => user.IsVerified && user.Id != userId);
+
+            if (!string.IsNullOrWhiteSpace(queryObject.UserName))
+            {
+                var userName = queryObject.UserName.Trim();
+                candidatesQuery = candidatesQuery.Where(user =>
+                    EF.Functions.ILike(user.UserName, $"%{userName}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryObject.City))
+            {
+                var city = queryObject.City.Trim();
+                candidatesQuery = candidatesQuery.Where(user =>
+                    EF.Functions.ILike(user.City, $"%{city}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryObject.Interest))
+            {
+                var interest = queryObject.Interest.Trim();
+                candidatesQuery = candidatesQuery.Where(user =>
+                    user.Interests.Any(userInterest =>
+                        EF.Functions.ILike(userInterest.SubCategory, $"%{interest}%") ||
+                        EF.Functions.ILike(userInterest.Category.Name, $"%{interest}%")));
+            }
+
+            return await candidatesQuery
+                .OrderBy(user => user.UserName)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
     }

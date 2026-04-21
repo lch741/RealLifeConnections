@@ -1,4 +1,5 @@
 using backend.DTOs;
+using backend.Helper;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -138,5 +139,24 @@ namespace backend.Controllers
                 return Unauthorized(ex.Message);
             }
         }
+
+        [Authorize]
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchMatches([FromQuery] UserQueryObject queryObject)
+        {
+            try
+            {
+                var result = await _userService.SearchMatchesAsync(User, queryObject);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+        }   
     }
 }
