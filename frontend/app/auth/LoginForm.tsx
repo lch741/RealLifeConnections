@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { SubmitEvent, useState } from "react";
 import Link from "next/link";
 import Toast, { type ToastState } from "./Toast";
 import { loginUser, saveAuthSession } from "../lib/auth-api";
@@ -13,10 +13,10 @@ export default function LoginForm() {
 
   function showToast(nextToast: ToastState) {
     setToast(nextToast);
-    window.setTimeout(() => setToast(null), 3600);
+    globalThis.setTimeout(() => setToast(null), 3600);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
 

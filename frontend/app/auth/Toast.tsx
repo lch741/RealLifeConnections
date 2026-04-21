@@ -21,7 +21,7 @@ const toneDots = {
   info: "bg-sky-500",
 };
 
-export default function Toast({ toast }: ToastProps) {
+export default function Toast({ toast }: Readonly<ToastProps>) {
   if (!toast) {
     return null;
   }

@@ -17,7 +17,7 @@ export default function AuthShell({
   switchHref,
   switchText,
   children,
-}: AuthShellProps) {
+}: Readonly<AuthShellProps>) {
   return (
     <main className="min-h-screen bg-[#f8faf7] text-zinc-950">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
