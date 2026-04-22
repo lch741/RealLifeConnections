@@ -7,7 +7,7 @@ export type RegisterPayload = {
   email: string;
   userName: string;
   password: string;
-  city: string;
+  city?: string;
   bio?: string;
   profileImageUrl?: string;
   interestSelections: InterestSelection[];

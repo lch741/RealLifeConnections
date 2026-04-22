@@ -20,7 +20,7 @@ export default function RegisterForm() {
   const [email, setEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState("online");
   const [bio, setBio] = useState("");
   const [categoryId, setCategoryId] = useState(1);
   const [interests, setInterests] = useState("");
@@ -75,7 +75,7 @@ export default function RegisterForm() {
         email,
         userName,
         password,
-        city,
+        city: city.trim() || undefined,
         bio: bio.trim() || undefined,
         interestSelections: parsedInterestSelections,
       });
