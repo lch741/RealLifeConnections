@@ -27,14 +27,29 @@ export default function RegisterForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
-  const parsedInterests = useMemo(
-    () =>
-      interests
-        .split(",")
-        .map((interest) => interest.trim())
-        .filter(Boolean)
-        .slice(0, 3),
-    [interests],
+
+  type InterestSelectionState = {
+    categoryId: number;
+    interests: string;
+  };
+
+  const [interestSelections, setInterestSelections] = useState<InterestSelectionState[]>([
+    { categoryId: 1, interests: "" },
+  ]);
+  
+  const parsedInterestSelections = useMemo(
+  () =>
+    interestSelections
+      .map((selection) => ({
+        categoryId: selection.categoryId,
+        interests: selection.interests
+          .split(",")
+          .map((interest) => interest.trim())
+          .filter(Boolean)
+          .slice(0, 3),
+      }))
+      .filter((selection) => selection.interests.length > 0),
+  [interestSelections],
   );
 
   function showToast(nextToast: ToastState) {
@@ -45,10 +60,10 @@ export default function RegisterForm() {
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (parsedInterests.length === 0) {
+    if (parsedInterestSelections.length === 0) {
       showToast({
         tone: "error",
-        message: "Please add at least one interest.",
+        message: "Please add at least one interest category.",
       });
       return;
     }
@@ -62,12 +77,7 @@ export default function RegisterForm() {
         password,
         city,
         bio: bio.trim() || undefined,
-        interestSelections: [
-          {
-            categoryId,
-            interests: parsedInterests,
-          },
-        ],
+        interestSelections: parsedInterestSelections,
       });
 
       saveAuthSession(auth);
@@ -79,9 +89,7 @@ export default function RegisterForm() {
       showToast({
         tone: "error",
         message:
-          error instanceof Error
-            ? error.message
-            : "Unable to register right now.",
+          error instanceof Error ? error.message : "Unable to register right now.",
       });
     } finally {
       setIsSubmitting(false);
@@ -151,55 +159,90 @@ export default function RegisterForm() {
           </label>
         </div>
 
-        <div className="mt-5 grid gap-5 sm:grid-cols-[0.8fr_1.2fr]">
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">
-              Interest category
-            </span>
-            <select
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              value={categoryId}
-              onChange={(event) => setCategoryId(Number(event.target.value))}
-            >
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="mt-5 space-y-4">
+          {interestSelections.map((selection, index) => (
+          <div
+            key={selection.categoryId+index}
+            className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr] rounded-md border border-zinc-200 p-4"
+          >
+            <label className="block">
+              <span className="text-sm font-semibold text-zinc-800">
+                Interest category {index + 1}
+              </span>
+              <select
+                className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                value={selection.categoryId}
+                onChange={(event) => {
+                  const nextSelections = [...interestSelections];
+                  nextSelections[index] = {
+                    ...selection,
+                    categoryId: Number(event.target.value),
+                  };
+                  setInterestSelections(nextSelections);
+                }}
+              >
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">
-              Interests
-            </span>
-            <input
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              type="text"
-              value={interests}
-              onChange={(event) => setInterests(event.target.value)}
-              placeholder="hiking, photography, coffee"
-              required
-            />
-          </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-zinc-800">
+                Interests
+              </span>
+              <input
+                className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                type="text"
+                value={selection.interests}
+                onChange={(event) => {
+                  const nextSelections = [...interestSelections];
+                  nextSelections[index] = {
+                    ...selection,
+                    interests: event.target.value,
+                  };
+                  setInterestSelections(nextSelections);
+                }}
+                placeholder="hiking, photography, coffee"
+                required
+              />
+            </label>
+          </div>
+        ))}
         </div>
+        
+        <button
+          type="button"
+          className="mt-4 rounded-md border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-800 disabled:opacity-50"
+          onClick={() => {
+            if (interestSelections.length < 3) {
+              setInterestSelections([
+                ...interestSelections,
+                { categoryId: 1, interests: "" },
+              ]);
+            }
+          }}
+          disabled={interestSelections.length >= 3}
+        >
+          Add category
+        </button>
 
-        <label className="mt-5 block">
-          <span className="text-sm font-semibold text-zinc-800">Bio</span>
-          <textarea
-            className="mt-2 min-h-28 w-full resize-y rounded-md border border-zinc-300 px-3 py-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-            value={bio}
-            onChange={(event) => setBio(event.target.value)}
-            maxLength={300}
-          />
-        </label>
+        <button
+          type="button"
+          className="mt-4 ml-4 rounded-md border border-red-600 px-4 py-2 text-sm font-semibold text-red-600 disabled:opacity-50"
+          onClick={() => {
+            if (interestSelections.length > 1) {
+              setInterestSelections(interestSelections.slice(0, -1));
+            }
+          }}
+          disabled={interestSelections.length <= 1}
+        >
+          Remove category
+        </button>
 
-        <div className="mt-4 rounded-md bg-zinc-100 px-3 py-2 text-sm text-zinc-700">
-          Selected interests:{" "}
-          <span className="font-semibold">
-            {parsedInterests.length > 0 ? parsedInterests.join(", ") : "None"}
-          </span>
-        </div>
+
 
         <button
           className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-base font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-400"

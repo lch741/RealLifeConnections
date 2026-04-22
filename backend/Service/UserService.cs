@@ -187,6 +187,11 @@ namespace backend.Service
                 throw new InvalidOperationException("At least one interest category must be selected.");
             }
 
+            if (selections.Count > 3)
+            {
+                throw new InvalidOperationException("A user can select at most 3 interest categories.");
+            }
+
             var validCategoryIds = categories.Select(category => category.Id).ToHashSet();
             var duplicateCategoryIds = selections
                 .GroupBy(selection => selection.CategoryId)
