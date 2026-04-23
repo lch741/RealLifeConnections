@@ -1,3 +1,5 @@
+import { handleApiError } from "./api-error";
+
 export type InterestSelection = {
   categoryId: number;
   interests: string[];
@@ -62,11 +64,7 @@ async function requestAuth<TPayload>(
   const data = await parseApiResponse(response);
 
   if (!response.ok) {
-    const message =
-      typeof data === "string"
-        ? data
-        : data?.message ?? data?.title ?? "Request failed.";
-    throw new Error(message);
+    handleApiError(response.status, data);
   }
 
   return data as AuthResponse;

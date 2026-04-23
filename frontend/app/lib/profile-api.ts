@@ -1,4 +1,6 @@
 // frontend/app/lib/profile-api.ts
+import { handleApiError } from "./api-error";
+
 export type InterestSelection = {
   categoryId: number;
   interests: string[];
@@ -43,6 +45,11 @@ function getAuthToken() {
   return localStorage.getItem("authToken");
 }
 
+function clearAuthSession() {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("authUser");
+}
+
 async function parseApiResponse(response: Response) {
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) return response.json();
@@ -51,24 +58,28 @@ async function parseApiResponse(response: Response) {
 
 async function request<T>(path: string, options: RequestInit = {}) {
   const token = getAuthToken();
+  const headers = new Headers(options.headers ?? undefined);
+
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers ?? {}),
-    },
+    headers,
   });
 
   const data = await parseApiResponse(response);
 
   if (!response.ok) {
-    const message =
-      typeof data === "string"
-        ? data
-        : data?.message ?? data?.title ?? "Request failed.";
-    throw new Error(message);
+    handleApiError(response.status, data, {
+      onUnauthorized: clearAuthSession,
+      redirectOnUnauthorized: true,
+    });
   }
 
   return data as T;
