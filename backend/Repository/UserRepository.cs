@@ -77,6 +77,7 @@ namespace backend.Repository
             }
 
             user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
+            user.City = string.IsNullOrWhiteSpace(dto.City) ? "online" : dto.City.Trim();
 
             var currentInterests = await _context.UserInterests
                 .Where(interest => interest.UserId == user.Id)
