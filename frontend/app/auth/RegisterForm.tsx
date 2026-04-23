@@ -1,8 +1,9 @@
 "use client";
 
-import { SubmitEvent, useMemo, useState } from "react";
+import { SubmitEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Toast, { type ToastState } from "./Toast";
+import { useRouter } from "next/navigation";
+import Toast, { type ToastState } from "../../components/Toast";
 import { registerUser, saveAuthSession } from "../lib/auth-api";
 
 const categories = [
@@ -17,15 +18,21 @@ const categories = [
 ];
 
 export default function RegisterForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [city, setCity] = useState("online");
-  const [bio, setBio] = useState("");
-  const [categoryId, setCategoryId] = useState(1);
-  const [interests, setInterests] = useState("");
+  const [bio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      router.replace("/profile");
+    }
+  }, [router]);
 
 
   type InterestSelectionState = {
@@ -81,6 +88,7 @@ export default function RegisterForm() {
       });
 
       saveAuthSession(auth);
+      router.replace("/profile");
       showToast({
         tone: "success",
         message: auth.message || "Registration successful.",

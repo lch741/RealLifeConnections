@@ -1,15 +1,24 @@
 "use client";
 
-import { SubmitEvent, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import Toast, { type ToastState } from "./Toast";
+import { useRouter } from "next/navigation";
+import Toast, { type ToastState } from "../../components/Toast";
 import { loginUser, saveAuthSession } from "../lib/auth-api";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      router.replace("/profile");
+    }
+  }, [router]);
 
   function showToast(nextToast: ToastState) {
     setToast(nextToast);
@@ -23,6 +32,7 @@ export default function LoginForm() {
     try {
       const auth = await loginUser({ email, password });
       saveAuthSession(auth);
+      router.replace("/profile");
       showToast({
         tone: "success",
         message: auth.message || "Login successful.",
