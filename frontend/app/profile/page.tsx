@@ -71,6 +71,7 @@ export default function ProfilePage() {
   ]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
   const parsedInterestSelections = useMemo(
@@ -164,6 +165,30 @@ export default function ProfilePage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function cancelEdit() {
+    if (!profile) {
+      return;
+    }
+    try {
+        const data = await getProfile();
+        setProfile(data);
+        setUserName(data.userName ?? "");
+        setCity(data.city || "online");
+        setBio(data.bio ?? "");
+        setInterestSelections(mapProfileToInterestState(data));
+        showToast({
+          tone: "info",
+          message: "Changes discarded.",
+        });
+      } catch (error) {
+        showToast({
+          tone: "error",
+          message:
+            error instanceof Error ? error.message : "Unable to load profile.",
+        });
+      }
   }
 
   return (
@@ -349,13 +374,23 @@ export default function ProfilePage() {
                     </button>
                   </div>
 
-                  <button
-                    className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-base font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
-                    type="submit"
-                    disabled={isSaving}
-                  >
-                    {isSaving ? "Saving changes..." : "Save profile"}
-                  </button>
+                  <div className="mt-2 flex gap-3">
+                    <button
+                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-base font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
+                      type="submit"
+                      disabled={isSaving}
+                    >
+                      {isSaving ? "Saving changes..." : "Save changes"}
+                    </button>
+                    <button
+                      className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-slate-600 px-4 text-base font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
+                      type="button"
+                      onClick={cancelEdit}
+                      disabled={isCanceling}
+                    >
+                      {isCanceling ? "Discarding changes..." : "Discard changes"}
+                    </button>
+                  </div>
                 </div>
               )}
             </form>
