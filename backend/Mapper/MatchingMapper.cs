@@ -17,6 +17,9 @@ namespace backend.Mapper
                 Bio = candidate.Bio,
                 City = candidate.City,
                 AvatarUrl = candidate.ProfileImageUrl,
+                Gender = candidate.Gender.ToString(),
+                Age = candidate.Age,
+                Culture = candidate.Culture,
                 SharedInterests = InterestMapper.ToSharedInterestResults(candidate.Interests, currentInterests, categories)
             };
         }
@@ -31,6 +34,9 @@ namespace backend.Mapper
                 Bio = candidate.Bio,
                 City = candidate.City,
                 AvatarUrl = candidate.ProfileImageUrl,
+                Gender = candidate.Gender.ToString(),
+                Age = candidate.Age,
+                Culture = candidate.Culture,
                 Interests = InterestMapper.ToInterestResults(candidate.Interests, categories)
             };
         }

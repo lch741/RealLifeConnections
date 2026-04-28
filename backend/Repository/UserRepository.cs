@@ -78,6 +78,11 @@ namespace backend.Repository
 
             user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
             user.City = string.IsNullOrWhiteSpace(dto.City) ? "online" : dto.City.Trim();
+            user.Gender = Enum.TryParse<Gender>(dto.Gender, true, out var gender)
+                ? gender
+                : user.Gender;
+            user.Age = dto.Age;
+            user.Culture = string.IsNullOrWhiteSpace(dto.Culture) ? null : dto.Culture.Trim();
 
             var currentInterests = await _context.UserInterests
                 .Where(interest => interest.UserId == user.Id)
@@ -132,40 +137,122 @@ namespace backend.Repository
             var pageNumber = queryObject.PageNumber < 1 ? 1 : queryObject.PageNumber;
             var pageSize = queryObject.PageSize <= 0 ? 20 : queryObject.PageSize;
 
-            var candidatesQuery = _context.Users
-                .AsNoTracking()
-                .Include(user => user.Interests)
-                .ThenInclude(interest => interest.Category)
-                .Where(user => user.IsVerified && user.Id != userId);
+            var candidatesQuery = ApplyBaseSearchScope(_context.Users.AsNoTracking(), userId);
 
-            if (!string.IsNullOrWhiteSpace(queryObject.UserName))
-            {
-                var userName = queryObject.UserName.Trim();
-                candidatesQuery = candidatesQuery.Where(user =>
-                    EF.Functions.ILike(user.UserName, $"%{userName}%"));
-            }
-
-            if (!string.IsNullOrWhiteSpace(queryObject.City))
-            {
-                var city = queryObject.City.Trim();
-                candidatesQuery = candidatesQuery.Where(user =>
-                    EF.Functions.ILike(user.City, $"%{city}%"));
-            }
-
-            if (!string.IsNullOrWhiteSpace(queryObject.Interest))
-            {
-                var interest = queryObject.Interest.Trim();
-                candidatesQuery = candidatesQuery.Where(user =>
-                    user.Interests.Any(userInterest =>
-                        EF.Functions.ILike(userInterest.SubCategory, $"%{interest}%") ||
-                        EF.Functions.ILike(userInterest.Category.Name, $"%{interest}%")));
-            }
+            candidatesQuery = ApplyUserNameFilter(candidatesQuery, queryObject.UserName);
+            candidatesQuery = ApplyCityFilter(candidatesQuery, queryObject.City);
+            candidatesQuery = ApplyInterestFilter(candidatesQuery, queryObject.Interest);
+            candidatesQuery = ApplyGenderFilter(candidatesQuery, queryObject.Gender);
+            candidatesQuery = ApplyAgeFilter(candidatesQuery, queryObject.Age);
+            candidatesQuery = ApplyCultureFilter(candidatesQuery, queryObject.Culture);
 
             return await candidatesQuery
                 .OrderBy(user => user.UserName)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+        }
+
+        private static IQueryable<AppUser> ApplyBaseSearchScope(
+            IQueryable<AppUser> query,
+            int userId)
+        {
+            return query
+                .Include(user => user.Interests)
+                .ThenInclude(interest => interest.Category)
+                .Where(user => user.IsVerified && user.Id != userId);
+        }
+
+        private static IQueryable<AppUser> ApplyUserNameFilter(
+            IQueryable<AppUser> query,
+            string? userName)
+        {
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                return query;
+            }
+
+            var normalizedUserName = userName.Trim();
+            return query.Where(user => EF.Functions.ILike(user.UserName, $"%{normalizedUserName}%"));
+        }
+
+        private static IQueryable<AppUser> ApplyCityFilter(
+            IQueryable<AppUser> query,
+            string? city)
+        {
+            if (string.IsNullOrWhiteSpace(city))
+            {
+                return query;
+            }
+
+            var normalizedCity = city.Trim();
+            return query.Where(user => EF.Functions.ILike(user.City, $"%{normalizedCity}%"));
+        }
+
+        private static IQueryable<AppUser> ApplyInterestFilter(
+            IQueryable<AppUser> query,
+            string? interest)
+        {
+            if (string.IsNullOrWhiteSpace(interest))
+            {
+                return query;
+            }
+
+            var normalizedInterest = interest.Trim();
+            return query.Where(user =>
+                user.Interests.Any(userInterest =>
+                    EF.Functions.ILike(userInterest.SubCategory, $"%{normalizedInterest}%") ||
+                    EF.Functions.ILike(userInterest.Category.Name, $"%{normalizedInterest}%")));
+        }
+
+        private static IQueryable<AppUser> ApplyGenderFilter(
+            IQueryable<AppUser> query,
+            string? genderText)
+        {
+            if (string.IsNullOrWhiteSpace(genderText))
+            {
+                return query;
+            }
+
+            return Enum.TryParse<Gender>(genderText.Trim(), true, out var genderFilter)
+                ? query.Where(user => user.Gender == genderFilter)
+                : query;
+        }
+
+        private static IQueryable<AppUser> ApplyAgeFilter(
+            IQueryable<AppUser> query,
+            int? age)
+        {
+            if (!age.HasValue)
+            {
+                return query;
+            }
+
+            if (age.Value <= 0)
+            {
+                throw new InvalidOperationException("Age must be greater than zero.");
+            }
+
+            var ageStart = (age.Value / 10) * 10;
+            var ageEnd = ageStart + 10;
+            return query.Where(user =>
+                user.Age.HasValue &&
+                user.Age.Value >= ageStart &&
+                user.Age.Value < ageEnd);
+        }
+
+        private static IQueryable<AppUser> ApplyCultureFilter(
+            IQueryable<AppUser> query,
+            string? culture)
+        {
+            if (string.IsNullOrWhiteSpace(culture))
+            {
+                return query;
+            }
+
+            var normalizedCulture = culture.Trim();
+            return query.Where(user =>
+                user.Culture != null && EF.Functions.ILike(user.Culture, $"%{normalizedCulture}%"));
         }
     }
 }
