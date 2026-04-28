@@ -10,6 +10,10 @@ namespace backend.DTOs
         public bool IsVerified { get; set; }
         public string VerificationStatus { get; set; } = "pending";
         public bool CanMatch { get; set; }
+        // Demographic
+        public string? Gender { get; set; }
+        public int? Age { get; set; }
+        public string? Culture { get; set; }
         public List<RegisterInterestResultDto> InterestSelections { get; set; } = new();
     }
 }

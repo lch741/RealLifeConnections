@@ -24,6 +24,15 @@ namespace backend.DTOs
 
         public string? ProfileImageUrl { get; set; }
 
+        // Demographic info
+        [MaxLength(20)]
+        public string? Gender { get; set; }
+
+        public int? Age { get; set; }
+
+        [MaxLength(100)]
+        public string? Culture { get; set; }
+
         [Required]
         public List<RegisterInterestSelectionDto> InterestSelections { get; set; } = new();
     }

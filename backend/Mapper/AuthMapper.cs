@@ -28,6 +28,9 @@ namespace backend.Mapper
                 Bio = user.Bio,
                 City = user.City,
                 ProfileImageUrl = user.ProfileImageUrl,
+                Gender = user.Gender.ToString(),
+                Age = user.Age,
+                Culture = user.Culture,
                 InterestSelections = InterestMapper.ToInterestResults(user.Interests, categories)
             };
         }

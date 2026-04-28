@@ -2,6 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace api.Models
 {
+    public enum Gender
+    {
+        Male = 0,
+        Female = 1,
+        Other = 2,
+        NotToTell = 3
+    }
+
     public class AppUser
     {
         public int Id { get; set; }
@@ -37,5 +45,15 @@ namespace api.Models
 
         // Verification records
         public List<Verification> Verifications { get; set; } = new();
+
+        // Demographic fields
+        public Gender Gender { get; set; } = Gender.NotToTell;
+
+        // Age (nullable — can be omitted)
+        public int? Age { get; set; }
+
+        // Culture / nationality (e.g., "Canadian", "Japanese")
+        [MaxLength(100)]
+        public string? Culture { get; set; }
     }
 }

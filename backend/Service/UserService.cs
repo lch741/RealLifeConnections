@@ -56,6 +56,26 @@ namespace backend.Service
                 ProfileImageUrl = string.IsNullOrWhiteSpace(dto.ProfileImageUrl) ? null : dto.ProfileImageUrl.Trim()
             };
 
+            // Apply optional demographic fields
+            if (!string.IsNullOrWhiteSpace(dto.Gender))
+            {
+                if (Enum.TryParse<Gender>(dto.Gender, true, out var parsedGender))
+                {
+                    user.Gender = parsedGender;
+                }
+                else
+                {
+                    user.Gender = Gender.NotToTell;
+                }
+            }
+
+            if (dto.Age.HasValue)
+            {
+                user.Age = dto.Age;
+            }
+
+            user.Culture = string.IsNullOrWhiteSpace(dto.Culture) ? null : dto.Culture?.Trim();
+
             var createdUser = await _userRepository.CreateUserAsync(user, dto.InterestSelections);
             return AuthMapper.ToAuthResponse(createdUser, categories, "Registration successful.", GenerateJwtToken(createdUser));
         }
