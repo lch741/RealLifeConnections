@@ -170,7 +170,7 @@ export default function RegisterForm() {
         <div className="mt-5 space-y-4">
           {interestSelections.map((selection, index) => (
           <div
-            key={selection.categoryId+index}
+            key={`${selection.categoryId}-${index}`}
             className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr] rounded-md border border-zinc-200 p-4"
           >
             <label className="block">
