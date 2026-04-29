@@ -8,6 +8,8 @@ export type GenderOption = {
   label: string;
 };
 
+export type CultureOption = typeof cultures[number];
+
 export const categories: CategoryOption[] = [
   { id: 1, name: "Sports" },
   { id: 2, name: "Art" },

@@ -1,5 +1,6 @@
 // frontend/app/lib/profile-api.ts
 import { handleApiError } from "./api-error";
+import type { CultureOption } from "./profile-options";
 
 export type InterestSelection = {
   categoryId: number;
@@ -14,7 +15,7 @@ export type UserProfile = {
   avatarUrl?: string | null;
   gender?: string | null;
   age?: number | null;
-  culture?: string | null;
+  culture?: CultureOption | null;
   isVerified: boolean;
   verificationStatus: string;
   canMatch: boolean;
@@ -31,7 +32,7 @@ export type UpdateProfilePayload = {
   city: string;
   gender?: string;
   age?: number;
-  culture?: string;
+  culture?: CultureOption;
   interestSelections: InterestSelection[];
 };
 

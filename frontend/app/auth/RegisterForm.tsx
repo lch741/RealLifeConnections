@@ -79,7 +79,7 @@ export default function RegisterForm() {
         bio: bio.trim() || undefined,
         gender: gender || undefined,
         age: age ? Number(age) : undefined,
-        culture: culture || undefined,
+        culture: (culture as any) || undefined,
         interestSelections: parsedInterestSelections,
       });
 
@@ -192,18 +192,18 @@ export default function RegisterForm() {
 
         <label className="block mt-4">
           <span className="text-sm font-semibold text-zinc-800">Culture</span>
-          <input
-            list="cultures-list"
+          <select
             className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
             value={culture}
             onChange={(e) => setCulture(e.target.value)}
-            placeholder="Start typing to search"
-          />
-          <datalist id="cultures-list">
+          >
+            <option value="">Select (optional)</option>
             {cultures.map((c) => (
-              <option key={c} value={c} />
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
-          </datalist>
+          </select>
         </label>
 
         <div className="mt-5 space-y-4">

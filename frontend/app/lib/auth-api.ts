@@ -1,4 +1,5 @@
 import { handleApiError } from "./api-error";
+import type { CultureOption } from "./profile-options";
 
 export type InterestSelection = {
   categoryId: number;
@@ -14,7 +15,7 @@ export type RegisterPayload = {
   profileImageUrl?: string;
   gender?: string;
   age?: number;
-  culture?: string;
+  culture?: CultureOption;
   interestSelections: InterestSelection[];
 };
 
@@ -32,7 +33,7 @@ export type AuthUser = {
   profileImageUrl?: string | null;
   gender?: string;
   age?: number;
-  culture?: string | null;
+  culture?: CultureOption | null;
 };
 
 export type AuthResponse = {

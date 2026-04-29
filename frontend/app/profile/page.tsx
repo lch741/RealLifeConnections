@@ -142,7 +142,7 @@ export default function ProfilePage() {
         bio: bio.trim() || undefined,
         gender: gender || undefined,
         age: age ? Number(age) : undefined,
-        culture: culture.trim() || undefined,
+        culture: (culture as any) || undefined,
         interestSelections: parsedInterestSelections,
       };
 
@@ -319,18 +319,18 @@ export default function ProfilePage() {
                     <span className="text-sm font-semibold text-zinc-800">
                       Culture
                     </span>
-                    <input
-                      list="profile-cultures-list"
+                    <select
                       className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                       value={culture}
                       onChange={(event) => setCulture(event.target.value)}
-                      placeholder="Start typing to search"
-                    />
-                    <datalist id="profile-cultures-list">
+                    >
+                      <option value="">Select (optional)</option>
                       {cultures.map((option) => (
-                        <option key={option} value={option} />
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
                       ))}
-                    </datalist>
+                    </select>
                   </label>
 
                   <label className="block">
