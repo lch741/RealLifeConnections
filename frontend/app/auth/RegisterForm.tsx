@@ -180,7 +180,8 @@ export default function RegisterForm() {
             <span className="text-sm font-semibold text-zinc-800">Age</span>
             <input
               type="number"
-              min={1}
+              min={18}
+              max={120}
               className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
               value={age}
               onChange={(e) => setAge(e.target.value)}

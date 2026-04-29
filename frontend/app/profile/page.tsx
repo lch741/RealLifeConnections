@@ -306,7 +306,8 @@ export default function ProfilePage() {
                       <input
                         className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                         type="number"
-                        min={1}
+                        min={18}
+                        max={120}
                         value={age}
                         onChange={(event) => setAge(event.target.value)}
                         placeholder="e.g. 28"
