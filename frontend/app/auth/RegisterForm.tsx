@@ -5,17 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Toast, { type ToastState } from "../../components/Toast";
 import { registerUser, saveAuthSession } from "../lib/auth-api";
-
-const categories = [
-  { id: 1, name: "Sports" },
-  { id: 2, name: "Art" },
-  { id: 3, name: "Music" },
-  { id: 4, name: "Technology" },
-  { id: 5, name: "Gaming" },
-  { id: 6, name: "Fitness" },
-  { id: 7, name: "Travel" },
-  { id: 8, name: "Other" },
-];
+import { categories, cultures, genders } from "../lib/profile-options";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -23,6 +13,9 @@ export default function RegisterForm() {
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [city, setCity] = useState("online");
+  const [gender, setGender] = useState("NotToTell");
+  const [age, setAge] = useState<string>("");
+  const [culture, setCulture] = useState("");
   const [bio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -84,6 +77,9 @@ export default function RegisterForm() {
         password,
         city: city.trim() || undefined,
         bio: bio.trim() || undefined,
+        gender: gender || undefined,
+        age: age ? Number(age) : undefined,
+        culture: culture || undefined,
         interestSelections: parsedInterestSelections,
       });
 
@@ -165,7 +161,49 @@ export default function RegisterForm() {
               required
             />
           </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-zinc-800">Gender</span>
+            <select
+              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+            >
+              {genders.map((g) => (
+                <option key={g.value} value={g.value}>
+                  {g.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-semibold text-zinc-800">Age</span>
+            <input
+              type="number"
+              min={1}
+              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="e.g. 28"
+            />
+          </label>
         </div>
+
+        <label className="block mt-4">
+          <span className="text-sm font-semibold text-zinc-800">Culture</span>
+          <input
+            list="cultures-list"
+            className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+            value={culture}
+            onChange={(e) => setCulture(e.target.value)}
+            placeholder="Start typing to search"
+          />
+          <datalist id="cultures-list">
+            {cultures.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </label>
 
         <div className="mt-5 space-y-4">
           {interestSelections.map((selection, index) => (

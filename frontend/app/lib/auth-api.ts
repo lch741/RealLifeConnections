@@ -12,6 +12,9 @@ export type RegisterPayload = {
   city?: string;
   bio?: string;
   profileImageUrl?: string;
+  gender?: string;
+  age?: number;
+  culture?: string;
   interestSelections: InterestSelection[];
 };
 
@@ -27,6 +30,9 @@ export type AuthUser = {
   city?: string;
   bio?: string | null;
   profileImageUrl?: string | null;
+  gender?: string;
+  age?: number;
+  culture?: string | null;
 };
 
 export type AuthResponse = {
