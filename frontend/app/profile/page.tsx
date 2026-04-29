@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type React from "react";
 import Toast, { type ToastState } from "../../components/Toast";
 import {
   getProfile,
@@ -11,18 +10,8 @@ import {
   updateProfile,
   type UserProfile,
 } from "../lib/profile-api";
+import { categories, cultures, genders } from "../lib/profile-options";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
-const categories = [
-  { id: 1, name: "Sports" },
-  { id: 2, name: "Art" },
-  { id: 3, name: "Music" },
-  { id: 4, name: "Technology" },
-  { id: 5, name: "Gaming" },
-  { id: 6, name: "Fitness" },
-  { id: 7, name: "Travel" },
-  { id: 8, name: "Other" },
-];
 
 type InterestSelectionState = {
   categoryId: number;
@@ -61,17 +50,23 @@ function normalizeInterestSelections(
     .filter((selection) => selection.interests.length > 0);
 }
 
+function normalizeGender(value?: string | null) {
+  return value && value.trim().length > 0 ? value : "NotToTell";
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userName, setUserName] = useState("");
   const [city, setCity] = useState("online");
   const [bio, setBio] = useState("");
+  const [gender, setGender] = useState("NotToTell");
+  const [age, setAge] = useState("");
+  const [culture, setCulture] = useState("");
   const [interestSelections, setInterestSelections] = useState<InterestSelectionState[]>([
     { categoryId: 1, interests: "" },
   ]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isCanceling, setIsCanceling] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
 
   const parsedInterestSelections = useMemo(
@@ -99,6 +94,9 @@ export default function ProfilePage() {
         setUserName(data.userName ?? "");
         setCity(data.city || "online");
         setBio(data.bio ?? "");
+        setGender(normalizeGender(data.gender));
+        setAge(data.age?.toString() ?? "");
+        setCulture(data.culture ?? "");
         setInterestSelections(mapProfileToInterestState(data));
       } catch (error) {
         if (!isMounted) {
@@ -124,7 +122,7 @@ export default function ProfilePage() {
     };
   }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: { preventDefault(): void }) {
     event.preventDefault();
 
     if (parsedInterestSelections.length === 0) {
@@ -142,6 +140,9 @@ export default function ProfilePage() {
         userName: userName.trim() || undefined,
         city: city.trim() || "online",
         bio: bio.trim() || undefined,
+        gender: gender || undefined,
+        age: age ? Number(age) : undefined,
+        culture: culture.trim() || undefined,
         interestSelections: parsedInterestSelections,
       };
 
@@ -150,6 +151,9 @@ export default function ProfilePage() {
       setUserName(updatedProfile.userName ?? "");
       setCity(updatedProfile.city || "online");
       setBio(updatedProfile.bio ?? "");
+      setGender(normalizeGender(updatedProfile.gender));
+      setAge(updatedProfile.age?.toString() ?? "");
+      setCulture(updatedProfile.culture ?? "");
       setInterestSelections(mapProfileToInterestState(updatedProfile));
 
       showToast({
@@ -177,6 +181,9 @@ export default function ProfilePage() {
         setUserName(data.userName ?? "");
         setCity(data.city || "online");
         setBio(data.bio ?? "");
+        setGender(normalizeGender(data.gender));
+        setAge(data.age?.toString() ?? "");
+        setCulture(data.culture ?? "");
         setInterestSelections(mapProfileToInterestState(data));
         showToast({
           tone: "info",
@@ -274,7 +281,56 @@ export default function ProfilePage() {
                         required
                       />
                     </label>
+
+                    <label className="block">
+                      <span className="text-sm font-semibold text-zinc-800">
+                        Gender
+                      </span>
+                      <select
+                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                        value={gender}
+                        onChange={(event) => setGender(event.target.value)}
+                      >
+                        {genders.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-semibold text-zinc-800">
+                        Age
+                      </span>
+                      <input
+                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                        type="number"
+                        min={1}
+                        value={age}
+                        onChange={(event) => setAge(event.target.value)}
+                        placeholder="e.g. 28"
+                      />
+                    </label>
                   </div>
+
+                  <label className="block">
+                    <span className="text-sm font-semibold text-zinc-800">
+                      Culture
+                    </span>
+                    <input
+                      list="profile-cultures-list"
+                      className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                      value={culture}
+                      onChange={(event) => setCulture(event.target.value)}
+                      placeholder="Start typing to search"
+                    />
+                    <datalist id="profile-cultures-list">
+                      {cultures.map((option) => (
+                        <option key={option} value={option} />
+                      ))}
+                    </datalist>
+                  </label>
 
                   <label className="block">
                     <span className="text-sm font-semibold text-zinc-800">
@@ -386,9 +442,8 @@ export default function ProfilePage() {
                       className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md bg-slate-600 px-4 text-base font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
                       type="button"
                       onClick={cancelEdit}
-                      disabled={isCanceling}
                     >
-                      {isCanceling ? "Discarding changes..." : "Discard changes"}
+                      Discard changes
                     </button>
                   </div>
                 </div>

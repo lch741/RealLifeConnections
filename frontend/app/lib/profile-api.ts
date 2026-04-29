@@ -12,6 +12,9 @@ export type UserProfile = {
   bio?: string | null;
   city: string;
   avatarUrl?: string | null;
+  gender?: string | null;
+  age?: number | null;
+  culture?: string | null;
   isVerified: boolean;
   verificationStatus: string;
   canMatch: boolean;
@@ -26,6 +29,9 @@ export type UpdateProfilePayload = {
   userName?: string;
   bio?: string;
   city: string;
+  gender?: string;
+  age?: number;
+  culture?: string;
   interestSelections: InterestSelection[];
 };
 
