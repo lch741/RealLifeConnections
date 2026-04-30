@@ -35,5 +35,15 @@ namespace backend.Service
         // 生产走真实实现
         throw new NotImplementedException("Use real AzureFaceService in production");
     }
+
+    public Task<AzureFaceVerificationResultDto> VerifyFacesAsync(string avatarUrl, byte[] liveCaptureImageBytes)
+    {
+        return VerifyFacesAsync(avatarUrl, "live-capture-upload");
+    }
+
+    public Task<AzureFaceVerificationResultDto> VerifyFacesAsync(byte[] avatarImageBytes, byte[] liveCaptureImageBytes)
+    {
+        return VerifyFacesAsync("avatar-upload", "live-capture-upload");
+    }
 }   
 }

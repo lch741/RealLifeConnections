@@ -8,12 +8,14 @@ using backend.DTOs;
 using backend.Helper;
 using backend.Interfaces;
 using backend.Mapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 
 namespace backend.Service
 {
     public class UserService : IUserService
     {
+        private const int MaxUploadBytes = 5 * 1024 * 1024;
         private readonly IConfiguration _configuration;
         private readonly IAzureFaceService _azureFaceService;
         private readonly IUserRepository _userRepository;
@@ -136,6 +138,28 @@ namespace backend.Service
             return ProfileMapper.ToUserProfile(updatedUser, categories);
         }
 
+        public async Task<UserProfileDto> SaveAvatarAsync(ClaimsPrincipal principal, IFormFile avatarFile)
+        {
+            var user = await GetCurrentUserAsync(principal);
+            var categories = await _userRepository.GetInterestCategoriesAsync();
+
+            var contentType = EnsureSupportedImage(avatarFile);
+            var avatarBytes = await ReadFileBytesAsync(avatarFile);
+            var avatarDataUrl = BuildDataUrl(avatarBytes, contentType);
+
+            user.IsVerified = false;
+            var updatedUser = await _userRepository.SaveAvatarUrlAsync(user, avatarDataUrl);
+            await _userRepository.AddVerificationAsync(new Verification
+            {
+                UserId = updatedUser.Id,
+                ImageUrl = "avatar-upload",
+                Status = "pending"
+            });
+
+            updatedUser = await _userRepository.GetUserByIdAsync(updatedUser.Id) ?? updatedUser;
+            return ProfileMapper.ToUserProfile(updatedUser, categories);
+        }
+
         public async Task<FaceVerificationResponseDto> VerifyFaceAsync(ClaimsPrincipal principal, FaceVerificationRequestDto dto)
         {
             var user = await GetCurrentUserAsync(principal);
@@ -153,6 +177,43 @@ namespace backend.Service
             {
                 UserId = user.Id,
                 ImageUrl = dto.LiveCaptureUrl.Trim(),
+                Status = status
+            });
+
+            await _userRepository.SaveAvatarUrlAsync(user, user.ProfileImageUrl);
+
+            return VerificationMapper.ToFaceVerificationResponse(azureResult);
+        }
+
+        public async Task<FaceVerificationResponseDto> VerifyFaceAsync(ClaimsPrincipal principal, IFormFile liveCaptureFile)
+        {
+            var user = await GetCurrentUserAsync(principal);
+
+            if (string.IsNullOrWhiteSpace(user.ProfileImageUrl))
+            {
+                throw new InvalidOperationException("Avatar must be uploaded before face verification.");
+            }
+
+            EnsureSupportedImage(liveCaptureFile);
+            var liveCaptureBytes = await ReadFileBytesAsync(liveCaptureFile);
+
+            AzureFaceVerificationResultDto azureResult;
+            if (TryParseDataUrl(user.ProfileImageUrl, out var avatarBytes))
+            {
+                azureResult = await _azureFaceService.VerifyFacesAsync(avatarBytes, liveCaptureBytes);
+            }
+            else
+            {
+                azureResult = await _azureFaceService.VerifyFacesAsync(user.ProfileImageUrl, liveCaptureBytes);
+            }
+
+            var status = azureResult.IsIdentical ? "approved" : "rejected";
+
+            user.IsVerified = azureResult.IsIdentical;
+            await _userRepository.AddVerificationAsync(new Verification
+            {
+                UserId = user.Id,
+                ImageUrl = "live-capture-upload",
                 Status = status
             });
 
@@ -248,6 +309,69 @@ namespace backend.Service
                 }
 
                 selection.Interests = cleanedInterests;
+            }
+        }
+
+        private static string EnsureSupportedImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new InvalidOperationException("Image file is required.");
+            }
+
+            if (file.Length > MaxUploadBytes)
+            {
+                throw new InvalidOperationException("Image file size must be 5MB or less.");
+            }
+
+            var contentType = file.ContentType?.Trim().ToLowerInvariant();
+            if (contentType != "image/jpeg" && contentType != "image/jpg" && contentType != "image/png")
+            {
+                throw new InvalidOperationException("Only JPEG or PNG images are supported.");
+            }
+
+            return contentType == "image/jpg" ? "image/jpeg" : contentType;
+        }
+
+        private static async Task<byte[]> ReadFileBytesAsync(IFormFile file)
+        {
+            await using var stream = file.OpenReadStream();
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            return memory.ToArray();
+        }
+
+        private static string BuildDataUrl(byte[] imageBytes, string contentType)
+        {
+            return $"data:{contentType};base64,{Convert.ToBase64String(imageBytes)}";
+        }
+
+        private static bool TryParseDataUrl(string value, out byte[] imageBytes)
+        {
+            imageBytes = Array.Empty<byte>();
+
+            const string base64Marker = ";base64,";
+            if (!value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var markerIndex = value.IndexOf(base64Marker, StringComparison.OrdinalIgnoreCase);
+            if (markerIndex < 0)
+            {
+                return false;
+            }
+
+            var base64 = value[(markerIndex + base64Marker.Length)..];
+
+            try
+            {
+                imageBytes = Convert.FromBase64String(base64);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
             }
         }
 

@@ -103,12 +103,50 @@ namespace backend.Controllers
         }
 
         [Authorize]
+        [HttpPost("avatar/upload")]
+        public async Task<IActionResult> SaveAvatarUpload([FromForm] IFormFile avatarFile)
+        {
+            try
+            {
+                var result = await _userService.SaveAvatarAsync(User, avatarFile);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+        }
+
+        [Authorize]
         [HttpPost("verify-face")]
         public async Task<IActionResult> VerifyFace([FromBody] FaceVerificationRequestDto dto)
         {
             try
             {
                 var result = await _userService.VerifyFaceAsync(User, dto);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpPost("verify-face/upload")]
+        public async Task<IActionResult> VerifyFaceUpload([FromForm] IFormFile liveCaptureFile)
+        {
+            try
+            {
+                var result = await _userService.VerifyFaceAsync(User, liveCaptureFile);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
