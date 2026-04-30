@@ -44,6 +44,13 @@ export type VerifyFacePayload = {
   liveCaptureUrl: string;
 };
 
+export type FaceVerificationResponse = {
+  status: string;
+  message: string;
+  isVerified: boolean;
+  confidence: number;
+};
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
   "http://localhost:5118";
@@ -66,8 +73,10 @@ async function parseApiResponse(response: Response) {
 async function request<T>(path: string, options: RequestInit = {}) {
   const token = getAuthToken();
   const headers = new Headers(options.headers ?? undefined);
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
 
-  if (!headers.has("Content-Type")) {
+  if (!isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -113,8 +122,28 @@ export function saveAvatar(payload: SaveAvatarPayload) {
 }
 
 export function verifyFace(payload: VerifyFacePayload) {
-  return request("/api/user/verify-face", {
+  return request<FaceVerificationResponse>("/api/user/verify-face", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export function saveAvatarUpload(file: File) {
+  const formData = new FormData();
+  formData.append("avatarFile", file);
+
+  return request<UserProfile>("/api/user/avatar/upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function verifyFaceUpload(file: File) {
+  const formData = new FormData();
+  formData.append("liveCaptureFile", file);
+
+  return request<FaceVerificationResponse>("/api/user/verify-face/upload", {
+    method: "POST",
+    body: formData,
   });
 }
