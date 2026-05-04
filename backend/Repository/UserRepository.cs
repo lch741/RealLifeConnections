@@ -4,6 +4,7 @@ using backend.DTO.Matching;
 using backend.DTOs;
 using backend.Helper;
 using backend.Interfaces;
+using backend.Mapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Repository
@@ -71,18 +72,14 @@ namespace backend.Repository
 
         public async Task<AppUser> UpdateProfileAsync(AppUser user, UpdateProfileDto dto)
         {
-            if (!string.IsNullOrWhiteSpace(dto.UserName))
-            {
-                user.UserName = dto.UserName.Trim();
-            }
+            // Apply simple profile updates and personality/preferences
+            ProfileMapper.ApplyProfileUpdate(user, dto);
 
-            user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
-            user.Suburb = string.IsNullOrWhiteSpace(dto.City) ? "online" : dto.City.Trim();
-            user.Gender = Enum.TryParse<Gender>(dto.Gender, true, out var gender)
-                ? gender
-                : user.Gender;
-            user.Age = dto.Age;
-            user.Culture = string.IsNullOrWhiteSpace(dto.Culture) ? null : dto.Culture.Trim();
+            // Ensure suburb/region are set sensibly if client omitted them
+            if (string.IsNullOrWhiteSpace(user.Suburb))
+            {
+                user.Suburb = "online";
+            }
 
             var currentInterests = await _context.UserInterests
                 .Where(interest => interest.UserId == user.Id)

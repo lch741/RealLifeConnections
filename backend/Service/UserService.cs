@@ -53,31 +53,12 @@ namespace backend.Service
                 Email = normalizedEmail,
                 UserName = normalizedUserName,
                 PasswordHash = HashPassword(dto.Password),
-                Region = dto.Region,
-                Suburb = dto.Suburb,
-                Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim(),
-                ProfileImageUrl = string.IsNullOrWhiteSpace(dto.ProfileImageUrl) ? null : dto.ProfileImageUrl.Trim()
+                Region = dto.Region?.Trim() ?? string.Empty,
+                Suburb = dto.Suburb?.Trim() ?? string.Empty
             };
 
-            // Apply optional demographic fields
-            if (!string.IsNullOrWhiteSpace(dto.Gender))
-            {
-                if (Enum.TryParse<Gender>(dto.Gender, true, out var parsedGender))
-                {
-                    user.Gender = parsedGender;
-                }
-                else
-                {
-                    user.Gender = Gender.NotToTell;
-                }
-            }
-
-            if (dto.Age.HasValue)
-            {
-                user.Age = dto.Age;
-            }
-
-            user.Culture = string.IsNullOrWhiteSpace(dto.Culture) ? null : dto.Culture?.Trim();
+            // Apply registration data (region/suburb, demographics, personality, preferences, avatar)
+            ProfileMapper.ApplyRegistrationData(user, dto);
 
             var createdUser = await _userRepository.CreateUserAsync(user, dto.InterestSelections);
             return AuthMapper.ToAuthResponse(createdUser, categories, "Registration successful.", GenerateJwtToken(createdUser));
