@@ -10,6 +10,7 @@ namespace backend.Interfaces
     {
         Task<Conversation?> GetConversationAsync(int user1Id, int user2Id);
         Task<Conversation> CreateConversationAsync(int user1Id, int user2Id);
+        Task<Conversation> CreateConversationAsync(int user1Id, int user2Id, int? meetupEventId, DateTime? endsAt);
         Task<Message> AddMessageAsync(Message message);
         Task<List<Message>> GetMessagesAsync(int conversationId);
         Task<List<Conversation>> GetUserConversationsAsync(int userId);

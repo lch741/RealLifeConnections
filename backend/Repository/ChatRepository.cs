@@ -35,6 +35,22 @@ namespace backend.Repository
             return convo;
         }
 
+        public async Task<Conversation> CreateConversationAsync(int user1Id, int user2Id, int? meetupEventId, DateTime? endsAt)
+        {
+            var convo = new Conversation
+            {
+                User1Id = user1Id,
+                User2Id = user2Id,
+                MeetupEventId = meetupEventId,
+                StartedAt = DateTime.UtcNow,
+                EndsAt = endsAt
+            };
+
+            _context.Conversations.Add(convo);
+            await _context.SaveChangesAsync();
+            return convo;
+        }
+
         public async Task<Message> AddMessageAsync(Message message)
         {
             _context.Messages.Add(message);
