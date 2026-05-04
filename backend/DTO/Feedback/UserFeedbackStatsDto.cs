@@ -9,7 +9,7 @@ namespace backend.DTO.Feedback
         public required string UserName { get; set; }
 
         /// <summary>
-        /// Average rating from all feedback (0-5).
+        /// Average rating (placeholder - using Yes count as primary metric).
         /// </summary>
         public double AverageRating { get; set; }
 
@@ -19,7 +19,7 @@ namespace backend.DTO.Feedback
         public int TotalFeedbacks { get; set; }
 
         /// <summary>
-        /// Percentage of users who would meet again.
+        /// Percentage of "Yes" responses from users.
         /// </summary>
         public double WouldMeetAgainPercentage { get; set; }
 

@@ -12,15 +12,12 @@ namespace backend.DTO.Feedback
         public int SubmittedByUserId { get; set; }
         public required string SubmittedByUserName { get; set; }
 
-        public int FeedbackAboutUserId { get; set; }
-        public required string FeedbackAboutUserName { get; set; }
+        /// <summary>
+        /// Result: "Yes", "Okay", "No"
+        /// </summary>
+        public string Result { get; set; } = "Okay";
 
-        public int Rating { get; set; }
         public string? Comment { get; set; }
-        public string? PersonalityFeedback { get; set; }
-        public bool? WouldMeetAgain { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime SubmittedAt { get; set; }
     }
 }

@@ -14,7 +14,6 @@ namespace backend.DTO.Meetup
 
         public int ActivityId { get; set; }
         public required string ActivityName { get; set; }
-        public string? ActivityCategory { get; set; }
 
         public DateTime EventDate { get; set; }
         public TimeSpan StartTime { get; set; }

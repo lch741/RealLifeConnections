@@ -53,8 +53,8 @@ namespace backend.Service
                 Email = normalizedEmail,
                 UserName = normalizedUserName,
                 PasswordHash = HashPassword(dto.Password),
-                Region = dto.City, // mapped from incoming City
-                Suburb = dto.City,
+                Region = dto.Region,
+                Suburb = dto.Suburb,
                 Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim(),
                 ProfileImageUrl = string.IsNullOrWhiteSpace(dto.ProfileImageUrl) ? null : dto.ProfileImageUrl.Trim()
             };

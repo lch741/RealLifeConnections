@@ -16,7 +16,6 @@ namespace backend.DTO.Matching
         /// Activity name and category.
         /// </summary>
         public required string ActivityName { get; set; }
-        public string? ActivityCategory { get; set; }
 
         /// <summary>
         /// Event date and time.
