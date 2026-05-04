@@ -1,5 +1,5 @@
 using backend.DTOs;
-using api.Models;
+using backend.Models;
 
 namespace backend.Mapper
 {
@@ -17,7 +17,7 @@ namespace backend.Mapper
                 Email = user.Email,
                 UserName = user.UserName,
                 Bio = user.Bio,
-                City = user.City,
+                City = user.Suburb ?? user.Region,
                 AvatarUrl = user.ProfileImageUrl,
                 IsVerified = user.IsVerified,
                 VerificationStatus = latestStatus,
@@ -36,7 +36,7 @@ namespace backend.Mapper
                 user.UserName = dto.UserName.Trim();
             }
 
-            user.City = dto.City;
+            user.Suburb = dto.City;
             user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
             if (!string.IsNullOrWhiteSpace(dto.Gender))
             {

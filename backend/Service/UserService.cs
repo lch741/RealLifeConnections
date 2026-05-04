@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using api.Models;
+using backend.Models;
 using backend.DTO.Matching;
 using backend.DTOs;
 using backend.Helper;
@@ -53,7 +53,8 @@ namespace backend.Service
                 Email = normalizedEmail,
                 UserName = normalizedUserName,
                 PasswordHash = HashPassword(dto.Password),
-                City = dto.City,
+                Region = dto.City, // mapped from incoming City
+                Suburb = dto.City,
                 Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim(),
                 ProfileImageUrl = string.IsNullOrWhiteSpace(dto.ProfileImageUrl) ? null : dto.ProfileImageUrl.Trim()
             };

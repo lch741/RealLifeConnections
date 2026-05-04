@@ -1,4 +1,4 @@
-using api.Models;
+using backend.Models;
 using backend.Data;
 using backend.DTO.Matching;
 using backend.DTOs;
@@ -77,7 +77,7 @@ namespace backend.Repository
             }
 
             user.Bio = string.IsNullOrWhiteSpace(dto.Bio) ? null : dto.Bio.Trim();
-            user.City = string.IsNullOrWhiteSpace(dto.City) ? "online" : dto.City.Trim();
+            user.Suburb = string.IsNullOrWhiteSpace(dto.City) ? "online" : dto.City.Trim();
             user.Gender = Enum.TryParse<Gender>(dto.Gender, true, out var gender)
                 ? gender
                 : user.Gender;
@@ -186,7 +186,7 @@ namespace backend.Repository
             }
 
             var normalizedCity = city.Trim();
-            return query.Where(user => EF.Functions.ILike(user.City, $"%{normalizedCity}%"));
+            return query.Where(user => EF.Functions.ILike(user.Suburb, $"%{normalizedCity}%") || EF.Functions.ILike(user.Region, $"%{normalizedCity}%"));
         }
 
         private static IQueryable<AppUser> ApplyInterestFilter(

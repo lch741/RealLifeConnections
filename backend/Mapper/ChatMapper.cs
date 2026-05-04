@@ -1,6 +1,6 @@
 using backend.DTOs;
 using api.DTOs;
-using api.Models;
+using backend.Models;
 
 namespace backend.Mapper
 {

@@ -1,5 +1,5 @@
 using backend.DTOs;
-using api.Models;
+using backend.Models;
 
 namespace backend.Mapper
 {
@@ -26,7 +26,7 @@ namespace backend.Mapper
                 Email = user.Email,
                 UserName = user.UserName,
                 Bio = user.Bio,
-                City = user.City,
+                City = user.Suburb ?? user.Region,
                 ProfileImageUrl = user.ProfileImageUrl,
                 Gender = user.Gender.ToString(),
                 Age = user.Age,

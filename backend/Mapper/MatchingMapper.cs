@@ -1,5 +1,5 @@
 using backend.DTOs;
-using api.Models;
+using backend.Models;
 using backend.DTO.Matching;
 
 namespace backend.Mapper
@@ -15,7 +15,7 @@ namespace backend.Mapper
             {
                 UserName = candidate.UserName,
                 Bio = candidate.Bio,
-                City = candidate.City,
+                City = candidate.Suburb ?? candidate.Region,
                 AvatarUrl = candidate.ProfileImageUrl,
                 Gender = candidate.Gender.ToString(),
                 Age = candidate.Age,
@@ -32,7 +32,7 @@ namespace backend.Mapper
             {
                 UserName = candidate.UserName,
                 Bio = candidate.Bio,
-                City = candidate.City,
+                City = candidate.Suburb ?? candidate.Region,
                 AvatarUrl = candidate.ProfileImageUrl,
                 Gender = candidate.Gender.ToString(),
                 Age = candidate.Age,

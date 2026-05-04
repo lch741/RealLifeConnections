@@ -2,7 +2,7 @@ using backend.DTOs;
 using backend.Data;
 using backend.Interfaces;
 using api.DTOs;
-using api.Models;
+using backend.Models;
 using backend.Mapper;
 
 namespace backend.Service
