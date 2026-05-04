@@ -24,7 +24,10 @@ namespace backend.Mapper
                 ConversationId = conversation.Id,
                 OtherUserId = conversation.User1Id == currentUserId ? conversation.User2Id : conversation.User1Id,
                 OtherUserName = string.Empty,
-                LastMessageAt = conversation.LastMessageAt
+                LastMessageAt = conversation.LastMessageAt,
+                IsClosed = conversation.IsClosed,
+                EndsAt = conversation.EndsAt,
+                IsExpired = conversation.EndsAt.HasValue && conversation.EndsAt.Value < DateTime.UtcNow
             };
         }
     }

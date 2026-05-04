@@ -48,6 +48,14 @@ namespace backend.Controllers
 
                 return Ok(new { message = "Message sent successfully" });
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
@@ -66,6 +74,10 @@ namespace backend.Controllers
 
                 return Ok(messages);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
@@ -82,6 +94,10 @@ namespace backend.Controllers
                 var convos = await _service.GetConversationsAsync(userId);
 
                 return Ok(convos);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {

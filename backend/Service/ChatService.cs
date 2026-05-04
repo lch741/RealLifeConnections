@@ -56,6 +56,7 @@ namespace backend.Service
             var convo = await _repo.GetConversationAsync(userId, otherUserId);
             if (convo == null) return new List<MessageResponseDto>();
 
+            // Allow viewing messages even if the chat is expired or closed; sending is blocked elsewhere.
             var messages = await _repo.GetMessagesAsync(convo.Id);
 
             return messages.Select(ChatMapper.ToMessageResponse).ToList();
@@ -65,6 +66,7 @@ namespace backend.Service
         {
             var convos = await _repo.GetUserConversationsAsync(userId);
 
+            // Return all conversations (including expired/closed) so user can view history; client should use flags to disable sending.
             return convos.Select(conversation => ChatMapper.ToConversation(conversation, userId)).ToList();
         }
     }
