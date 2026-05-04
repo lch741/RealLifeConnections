@@ -5,7 +5,8 @@ namespace backend.DTOs
         public required string Email { get; set; }
         public required string UserName { get; set; }
         public string? Bio { get; set; }
-        public required string City { get; set; }
+        public required string Region { get; set; }
+        public required string Suburb { get; set; }
         public string? ProfileImageUrl { get; set; }
         // Demographic
         public string? Gender { get; set; }

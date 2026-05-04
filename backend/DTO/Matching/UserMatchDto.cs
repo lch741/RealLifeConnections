@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using backend.DTOs;
+
 namespace backend.DTO.Matching
 {
     /// <summary>

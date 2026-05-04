@@ -7,6 +7,8 @@ namespace backend.DTOs
         public required string UserName { get; set; }
         public string? Bio { get; set; }
         public string? ProfileImageUrl { get; set; }
+        public required string Region { get; set; }
+        public required string Suburb { get; set; }
         public List<RegisterInterestResultDto> InterestSelections { get; set; } = new();
     }
 }
