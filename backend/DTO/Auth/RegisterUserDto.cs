@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using backend.DTO.Matching;
 
 namespace backend.DTOs
 {
@@ -17,7 +18,12 @@ namespace backend.DTOs
         public required string Password { get; set; }
 
         [Required]
-        public required string City { get; set; }
+        [MaxLength(50)]
+        public required string Region { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public required string Suburb { get; set; }
 
         [MaxLength(300)]
         public string? Bio { get; set; }
@@ -32,6 +38,12 @@ namespace backend.DTOs
 
         [MaxLength(100)]
         public string? Culture { get; set; }
+
+        // Personality traits (optional on registration)
+        public PersonalityDto? Personality { get; set; }
+
+        // Preferred distance for meetups
+        public int? PreferredDistanceKm { get; set; }
 
         [Required]
         public List<RegisterInterestSelectionDto> InterestSelections { get; set; } = new();

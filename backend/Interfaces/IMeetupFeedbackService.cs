@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using backend.DTO.Feedback;
 using backend.DTO.Matching;
 
 namespace backend.Interfaces

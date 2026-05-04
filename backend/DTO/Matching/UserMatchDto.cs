@@ -1,8 +1,9 @@
-using backend.DTO.Matching;
-
-namespace backend.DTOs
+namespace backend.DTO.Matching
 {
-    public class MatchCandidateDto
+    /// <summary>
+    /// DTO for user matching recommendations based on personality and preferences.
+    /// </summary>
+    public class UserMatchDto
     {
         public int UserId { get; set; }
         public required string UserName { get; set; }
@@ -18,6 +19,11 @@ namespace backend.DTOs
         /// Compatibility score with current user (0-100).
         /// </summary>
         public int CompatibilityScore { get; set; }
+
+        /// <summary>
+        /// Reason for the match (e.g., "High personality compatibility", "Similar interests").
+        /// </summary>
+        public string? MatchReason { get; set; }
 
         public List<RegisterInterestResultDto> SharedInterests { get; set; } = new();
         public PersonalityDto? Personality { get; set; }
