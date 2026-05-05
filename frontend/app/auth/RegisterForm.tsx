@@ -6,13 +6,19 @@ import { useRouter } from "next/navigation";
 import Toast, { type ToastState } from "../../components/Toast";
 import { registerUser, saveAuthSession } from "../lib/auth-api";
 import { categories, cultures, genders } from "../lib/profile-options";
+import { nzLocations } from "../lib/nz-locations";
 
 export default function RegisterForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
-  const [city, setCity] = useState("online");
+  const [region, setRegion] = useState<string>(nzLocations[0]?.region ?? "Auckland");
+  const [city, setCity] = useState<string>("");
+  const citiesForRegion = useMemo(
+    () => nzLocations.find((l) => l.region === region)?.cities ?? [],
+    [region],
+  );
   const [gender, setGender] = useState("NotToTell");
   const [age, setAge] = useState<string>("");
   const [culture, setCulture] = useState("");
@@ -75,7 +81,8 @@ export default function RegisterForm() {
         email,
         userName,
         password,
-        city: city.trim() || undefined,
+        region: region.trim() || undefined,
+        suburb: city.trim() || undefined,
         bio: bio.trim() || undefined,
         gender: gender || undefined,
         age: age ? Number(age) : undefined,
@@ -151,15 +158,39 @@ export default function RegisterForm() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">City</span>
-            <input
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              type="text"
-              value={city}
-              onChange={(event) => setCity(event.target.value)}
-              autoComplete="address-level2"
+            <span className="text-sm font-semibold text-zinc-800">Region</span>
+            <select
+              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+              value={region}
+              onChange={(e) => {
+                setRegion(e.target.value);
+                setCity("");
+              }}
               required
-            />
+            >
+              {nzLocations.map((l) => (
+                <option key={l.region} value={l.region}>
+                  {l.region}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-semibold text-zinc-800">City</span>
+            <select
+              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+            >
+              <option value="">Select city</option>
+              {citiesForRegion.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="block">
             <span className="text-sm font-semibold text-zinc-800">Gender</span>

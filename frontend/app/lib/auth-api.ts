@@ -10,7 +10,8 @@ export type RegisterPayload = {
   email: string;
   userName: string;
   password: string;
-  city?: string;
+  region?: string;
+  suburb?: string;
   bio?: string;
   profileImageUrl?: string;
   gender?: string;
@@ -28,7 +29,8 @@ export type AuthUser = {
   id?: number;
   email: string;
   userName: string;
-  city?: string;
+  region?: string;
+  suburb?: string;
   bio?: string | null;
   profileImageUrl?: string | null;
   gender?: string;
