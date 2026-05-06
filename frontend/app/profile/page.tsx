@@ -12,13 +12,76 @@ import {
   type UserProfile,
   verifyFaceUpload,
 } from "../lib/profile-api";
-import { categories, cultures, genders } from "../lib/profile-options";
+import { categories, cultures, genders, type CultureOption } from "../lib/profile-options";
+import { nzLocations } from "../lib/nz-locations";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
 type InterestSelectionState = {
   categoryId: number;
   interests: string;
 };
+
+type PersonalityState = {
+  chillToEnergetic: number;
+  talkativeToQuiet: number;
+  plannerToSpontaneous: number;
+  introvertToExtrovert: number;
+  preferredDaysOfWeek: string;
+  preferredTimeOfDay: string;
+  preferredDistanceKm: string;
+};
+
+const personalityTraits: Array<{
+  key: keyof Pick<
+    PersonalityState,
+    | "chillToEnergetic"
+    | "talkativeToQuiet"
+    | "plannerToSpontaneous"
+    | "introvertToExtrovert"
+  >;
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+}> = [
+  {
+    key: "chillToEnergetic",
+    label: "Chill ↔ Energetic",
+    leftLabel: "Chill",
+    rightLabel: "Energetic",
+  },
+  {
+    key: "talkativeToQuiet",
+    label: "Talkative ↔ Quiet",
+    leftLabel: "Talkative",
+    rightLabel: "Quiet",
+  },
+  {
+    key: "plannerToSpontaneous",
+    label: "Planner ↔ Spontaneous",
+    leftLabel: "Planner",
+    rightLabel: "Spontaneous",
+  },
+  {
+    key: "introvertToExtrovert",
+    label: "Introvert ↔ Extrovert",
+    leftLabel: "Introvert",
+    rightLabel: "Extrovert",
+  },
+];
+
+const preferredDaysOptions = ["Weekday", "Weekend", "Anytime"] as const;
+const preferredTimeOptions = ["Morning", "Afternoon", "Evening", "Anytime"] as const;
+
+function createDefaultPersonalityState(): PersonalityState {
+  return {
+    chillToEnergetic: 50,
+    talkativeToQuiet: 50,
+    plannerToSpontaneous: 50,
+    introvertToExtrovert: 50,
+    preferredDaysOfWeek: "",
+    preferredTimeOfDay: "",
+    preferredDistanceKm: "",
+  };
+}
 
 function logoutAndRedirect() {
   localStorage.removeItem("authToken");
@@ -56,14 +119,45 @@ function normalizeGender(value?: string | null) {
   return value && value.trim().length > 0 ? value : "NotToTell";
 }
 
+function mapProfileToPersonalityState(profile: UserProfile): PersonalityState {
+  const personality = profile.personality ?? {};
+
+  return {
+    ...createDefaultPersonalityState(),
+    chillToEnergetic: personality.chillToEnergetic ?? 50,
+    talkativeToQuiet: personality.talkativeToQuiet ?? 50,
+    plannerToSpontaneous: personality.plannerToSpontaneous ?? 50,
+    introvertToExtrovert: personality.introvertToExtrovert ?? 50,
+    preferredDaysOfWeek: personality.preferredDaysOfWeek ?? "",
+    preferredTimeOfDay: personality.preferredTimeOfDay ?? "",
+    preferredDistanceKm: personality.preferredDistanceKm?.toString() ?? "",
+  };
+}
+
+function buildPersonalityPayload(personality: PersonalityState) {
+  return {
+    chillToEnergetic: personality.chillToEnergetic,
+    talkativeToQuiet: personality.talkativeToQuiet,
+    plannerToSpontaneous: personality.plannerToSpontaneous,
+    introvertToExtrovert: personality.introvertToExtrovert,
+    preferredDaysOfWeek: personality.preferredDaysOfWeek || undefined,
+    preferredTimeOfDay: personality.preferredTimeOfDay || undefined,
+    preferredDistanceKm: personality.preferredDistanceKm
+      ? Number(personality.preferredDistanceKm)
+      : undefined,
+  };
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userName, setUserName] = useState("");
-  const [city, setCity] = useState("online");
+  const [region, setRegion] = useState(nzLocations[0]?.region ?? "");
+  const [suburb, setSuburb] = useState("");
   const [bio, setBio] = useState("");
   const [gender, setGender] = useState("NotToTell");
   const [age, setAge] = useState("");
-  const [culture, setCulture] = useState("");
+  const [culture, setCulture] = useState<CultureOption | "">("");
+  const [personality, setPersonality] = useState<PersonalityState>(createDefaultPersonalityState());
   const [interestSelections, setInterestSelections] = useState<InterestSelectionState[]>([
     { categoryId: 1, interests: "" },
   ]);
@@ -87,6 +181,11 @@ export default function ProfilePage() {
     [interestSelections],
   );
 
+  const suburbsForRegion = useMemo(
+    () => nzLocations.find((location) => location.region === region)?.cities ?? [],
+    [region],
+  );
+
   function showToast(nextToast: ToastState) {
     setToast(nextToast);
     globalThis.setTimeout(() => setToast(null), 3600);
@@ -95,11 +194,13 @@ export default function ProfilePage() {
   function applyProfileState(data: UserProfile) {
     setProfile(data);
     setUserName(data.userName ?? "");
-    setCity(data.city || "online");
+    setRegion(data.region || nzLocations[0]?.region || "");
+    setSuburb(data.suburb || "");
     setBio(data.bio ?? "");
     setGender(normalizeGender(data.gender));
     setAge(data.age?.toString() ?? "");
     setCulture(data.culture ?? "");
+    setPersonality(mapProfileToPersonalityState(data));
     setInterestSelections(mapProfileToInterestState(data));
     setAvatarPreviewUrl(data.avatarUrl ?? null);
   }
@@ -287,11 +388,13 @@ export default function ProfilePage() {
     try {
       const payload: UpdateProfilePayload = {
         userName: userName.trim() || undefined,
-        city: city.trim() || "online",
+        region: region.trim() || nzLocations[0]?.region || "",
+        suburb: suburb.trim() || "",
         bio: bio.trim() || undefined,
         gender: gender || undefined,
         age: age ? Number(age) : undefined,
-        culture: (culture as any) || undefined,
+        culture: culture || undefined,
+        personality: buildPersonalityPayload(personality),
         interestSelections: parsedInterestSelections,
       };
 
@@ -318,19 +421,19 @@ export default function ProfilePage() {
       return;
     }
     try {
-        const data = await getProfile();
-        applyProfileState(data);
-        showToast({
-          tone: "info",
-          message: "Changes discarded.",
-        });
-      } catch (error) {
-        showToast({
-          tone: "error",
-          message:
-            error instanceof Error ? error.message : "Unable to load profile.",
-        });
-      }
+      const data = await getProfile();
+      applyProfileState(data);
+      showToast({
+        tone: "info",
+        message: "Changes discarded.",
+      });
+    } catch (error) {
+      showToast({
+        tone: "error",
+        message:
+          error instanceof Error ? error.message : "Unable to load profile.",
+      });
+    }
   }
 
   return (
@@ -492,7 +595,7 @@ export default function ProfilePage() {
                       Edit your information.
                     </h1>
                     <p className="mt-3 text-base leading-7 text-zinc-650">
-                      Update your city, bio, username, and interests from one place.
+                      Update your region, suburb, bio, personality, username, and interests from one place.
                     </p>
                   </div>
 
@@ -513,16 +616,45 @@ export default function ProfilePage() {
 
                     <label className="block">
                       <span className="text-sm font-semibold text-zinc-800">
-                        City
+                        Region
                       </span>
-                      <input
-                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                        type="text"
-                        value={city}
-                        onChange={(event) => setCity(event.target.value)}
-                        autoComplete="address-level2"
+                      <select
+                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                        value={region}
+                        onChange={(event) => {
+                          const nextRegion = event.target.value;
+                          const nextSuburb = nzLocations.find((location) => location.region === nextRegion)?.cities[0] ?? "";
+                          setRegion(nextRegion);
+                          setSuburb(nextSuburb);
+                        }}
                         required
-                      />
+                      >
+                        <option value="">Select region</option>
+                        {nzLocations.map((location) => (
+                          <option key={location.region} value={location.region}>
+                            {location.region}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-semibold text-zinc-800">
+                        Suburb
+                      </span>
+                      <select
+                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                        value={suburb}
+                        onChange={(event) => setSuburb(event.target.value)}
+                        required
+                      >
+                        <option value="">Select suburb</option>
+                        {suburbsForRegion.map((suburbOption) => (
+                          <option key={suburbOption} value={suburbOption}>
+                            {suburbOption}
+                          </option>
+                        ))}
+                      </select>
                     </label>
 
                     <label className="block">
@@ -565,7 +697,7 @@ export default function ProfilePage() {
                     <select
                       className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                       value={culture}
-                      onChange={(event) => setCulture(event.target.value)}
+                      onChange={(event) => setCulture(event.target.value as CultureOption | "")}
                     >
                       <option value="">Select (optional)</option>
                       {cultures.map((option) => (
@@ -589,90 +721,200 @@ export default function ProfilePage() {
                     />
                   </label>
 
-                  <div className="space-y-4">
-                    {interestSelections.map((selection, index) => (
-                      <div
-                        key={`${selection.categoryId}-${index}`}
-                        className="grid gap-4 rounded-2xl border border-zinc-200 p-4 sm:grid-cols-[0.8fr_1.2fr]"
-                      >
+                  <section className="rounded-md border border-zinc-200 p-4">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-zinc-800">Personality</h3>
+                      <p className="mt-1 text-sm text-zinc-600">
+                        Fine-tune how you want to show up in matching.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-5 lg:grid-cols-2">
+                      <div className="space-y-4">
+                        {personalityTraits.map((trait) => (
+                          <label key={trait.key} className="block">
+                            <span className="text-sm font-semibold text-zinc-800">{trait.label}</span>
+                            <input
+                              className="mt-2 w-full accent-emerald-700"
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={personality[trait.key]}
+                              onChange={(event) => {
+                                setPersonality((current) => ({
+                                  ...current,
+                                  [trait.key]: Number(event.target.value),
+                                }));
+                              }}
+                            />
+                            <div className="mt-1 grid grid-cols-[4.5rem_1fr_4.5rem] items-center text-xs text-zinc-500">
+                              <span className="truncate">{trait.leftLabel}</span>
+                              <span className="text-center tabular-nums font-medium text-zinc-600">
+                                {personality[trait.key]}
+                              </span>
+                              <span className="truncate text-right">{trait.rightLabel}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+
+                      <div className="space-y-4">
                         <label className="block">
-                          <span className="text-sm font-semibold text-zinc-800">
-                            Interest category {index + 1}
-                          </span>
+                          <span className="text-sm font-semibold text-zinc-800">Preferred days</span>
                           <select
                             className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                            value={selection.categoryId}
-                            onChange={(event) => {
-                              const nextSelections = [...interestSelections];
-                              nextSelections[index] = {
-                                ...selection,
-                                categoryId: Number(event.target.value),
-                              };
-                              setInterestSelections(nextSelections);
-                            }}
+                            value={personality.preferredDaysOfWeek}
+                            onChange={(event) =>
+                              setPersonality((current) => ({
+                                ...current,
+                                preferredDaysOfWeek: event.target.value,
+                              }))
+                            }
                           >
-                            {categories.map((category) => (
-                              <option key={category.id} value={category.id}>
-                                {category.name}
+                            <option value="">Select (optional)</option>
+                            {preferredDaysOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
                               </option>
                             ))}
                           </select>
                         </label>
 
                         <label className="block">
-                          <span className="text-sm font-semibold text-zinc-800">
-                            Interests
-                          </span>
+                          <span className="text-sm font-semibold text-zinc-800">Preferred time</span>
+                          <select
+                            className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                            value={personality.preferredTimeOfDay}
+                            onChange={(event) =>
+                              setPersonality((current) => ({
+                                ...current,
+                                preferredTimeOfDay: event.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">Select (optional)</option>
+                            {preferredTimeOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="block">
+                          <span className="text-sm font-semibold text-zinc-800">Maximum activity range (km)</span>
                           <input
                             className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                            type="text"
-                            value={selection.interests}
-                            onChange={(event) => {
-                              const nextSelections = [...interestSelections];
-                              nextSelections[index] = {
-                                ...selection,
-                                interests: event.target.value,
-                              };
-                              setInterestSelections(nextSelections);
-                            }}
-                            placeholder="hiking, photography, coffee"
-                            required
+                            type="number"
+                            min={1}
+                            max={500}
+                            value={personality.preferredDistanceKm}
+                            onChange={(event) =>
+                              setPersonality((current) => ({
+                                ...current,
+                                preferredDistanceKm: event.target.value,
+                              }))
+                            }
+                            placeholder="e.g. 20"
                           />
                         </label>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  </section>
 
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      className="rounded-md border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:opacity-50"
-                      onClick={() => {
-                        if (interestSelections.length < 3) {
-                          setInterestSelections([
-                            ...interestSelections,
-                            { categoryId: 1, interests: "" },
-                          ]);
-                        }
-                      }}
-                      disabled={interestSelections.length >= 3}
-                    >
-                      Add category
-                    </button>
+                  <section className="rounded-md border border-zinc-200 p-4">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-zinc-800">Interests</h3>
+                      <p className="mt-1 text-sm text-zinc-600">
+                        Add the interests you want to bring into matching.
+                      </p>
+                    </div>
 
-                    <button
-                      type="button"
-                      className="rounded-md border border-red-600 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                      onClick={() => {
-                        if (interestSelections.length > 1) {
-                          setInterestSelections(interestSelections.slice(0, -1));
-                        }
-                      }}
-                      disabled={interestSelections.length <= 1}
-                    >
-                      Remove category
-                    </button>
-                  </div>
+                    <div className="space-y-4">
+                      {interestSelections.map((selection, index) => (
+                        <div
+                          key={`${selection.categoryId}-${index}`}
+                          className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr] rounded-md border border-zinc-200 p-4"
+                        >
+                          <label className="block">
+                            <span className="text-sm font-semibold text-zinc-800">
+                              Interest category {index + 1}
+                            </span>
+                            <select
+                              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                              value={selection.categoryId}
+                              onChange={(event) => {
+                                const nextSelections = [...interestSelections];
+                                nextSelections[index] = {
+                                  ...selection,
+                                  categoryId: Number(event.target.value),
+                                };
+                                setInterestSelections(nextSelections);
+                              }}
+                            >
+                              {categories.map((category) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className="block">
+                            <span className="text-sm font-semibold text-zinc-800">
+                              Interests
+                            </span>
+                            <input
+                              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                              type="text"
+                              value={selection.interests}
+                              onChange={(event) => {
+                                const nextSelections = [...interestSelections];
+                                nextSelections[index] = {
+                                  ...selection,
+                                  interests: event.target.value,
+                                };
+                                setInterestSelections(nextSelections);
+                              }}
+                              placeholder="hiking, photography, coffee"
+                              required
+                            />
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        className="flex h-11 items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white shadow-sm shadow-emerald-950/10 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-950/15 active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-zinc-400"
+                        onClick={() => {
+                          if (interestSelections.length < 3) {
+                            setInterestSelections([
+                              ...interestSelections,
+                              { categoryId: 1, interests: "" },
+                            ]);
+                          }
+                        }}
+                        disabled={interestSelections.length >= 3}
+                      >
+                        Add category
+                      </button>
+
+                      <button
+                        type="button"
+                        className="flex h-11 items-center justify-center gap-2 rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm shadow-red-950/10 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-lg hover:shadow-red-950/15 active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-zinc-400"
+                        onClick={() => {
+                          if (interestSelections.length > 1) {
+                            setInterestSelections(interestSelections.slice(0, -1));
+                          }
+                        }}
+                        disabled={interestSelections.length <= 1}
+                      >
+                        Remove category
+                      </button>
+                    </div>
+                  </section>
 
                   <div className="mt-2 flex gap-3">
                     <button

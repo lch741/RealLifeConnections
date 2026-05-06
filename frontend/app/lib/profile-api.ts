@@ -7,11 +7,23 @@ export type InterestSelection = {
   interests: string[];
 };
 
+export type PersonalityPayload = {
+  chillToEnergetic?: number;
+  talkativeToQuiet?: number;
+  plannerToSpontaneous?: number;
+  introvertToExtrovert?: number;
+  preferredDaysOfWeek?: string;
+  preferredTimeOfDay?: string;
+  preferredDistanceKm?: number;
+};
+
 export type UserProfile = {
+  id: number;
   email: string;
   userName: string;
   bio?: string | null;
-  city: string;
+  region: string;
+  suburb: string;
   avatarUrl?: string | null;
   gender?: string | null;
   age?: number | null;
@@ -19,6 +31,7 @@ export type UserProfile = {
   isVerified: boolean;
   verificationStatus: string;
   canMatch: boolean;
+  personality?: PersonalityPayload | null;
   interestSelections: Array<{
     categoryId: number;
     categoryName: string;
@@ -29,10 +42,12 @@ export type UserProfile = {
 export type UpdateProfilePayload = {
   userName?: string;
   bio?: string;
-  city: string;
+  region: string;
+  suburb: string;
   gender?: string;
   age?: number;
   culture?: CultureOption;
+  personality?: PersonalityPayload;
   interestSelections: InterestSelection[];
 };
 
