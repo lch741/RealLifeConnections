@@ -172,6 +172,11 @@ namespace backend.Mapper
             {
                 user.PreferredTimeOfDay = dto.PreferredTimeOfDay.Trim();
             }
+
+            if (dto.PreferredDistanceKm.HasValue)
+            {
+                user.PreferredDistanceKm = dto.PreferredDistanceKm;
+            }
         }
     }
 }
