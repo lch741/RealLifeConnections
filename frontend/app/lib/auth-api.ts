@@ -6,6 +6,13 @@ export type InterestSelection = {
   interests: string[];
 };
 
+export type PersonalityPayload = {
+  chillToEnergetic?: number;
+  talkativeToQuiet?: number;
+  plannerToSpontaneous?: number;
+  introvertToExtrovert?: number;
+};
+
 export type RegisterPayload = {
   email: string;
   userName: string;
@@ -17,6 +24,7 @@ export type RegisterPayload = {
   gender?: string;
   age?: number;
   culture?: CultureOption;
+  personality?: PersonalityPayload;
   interestSelections: InterestSelection[];
 };
 

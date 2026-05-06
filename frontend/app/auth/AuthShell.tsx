@@ -7,6 +7,7 @@ type AuthShellProps = {
   switchLabel: string;
   switchHref: string;
   switchText: string;
+  stacked?: boolean;
   children: ReactNode;
 };
 
@@ -16,6 +17,7 @@ export default function AuthShell({
   switchLabel,
   switchHref,
   switchText,
+  stacked = false,
   children,
 }: Readonly<AuthShellProps>) {
   return (
@@ -33,8 +35,12 @@ export default function AuthShell({
           </Link>
         </nav>
 
-        <section className="grid flex-1 items-center gap-10 py-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="max-w-xl">
+        <section
+          className={stacked
+            ? "flex flex-1 flex-col gap-8 py-10"
+            : "grid flex-1 items-center gap-10 py-10 lg:grid-cols-[0.9fr_1.1fr]"}
+        >
+          <div className={stacked ? "w-full max-w-3xl" : "max-w-xl"}>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">
               {switchLabel}
             </p>

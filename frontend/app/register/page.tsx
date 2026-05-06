@@ -4,11 +4,12 @@ import RegisterForm from "../auth/RegisterForm";
 export default function RegisterPage() {
   return (
     <AuthShell
-      title="Create a profile that starts with shared interests."
-      subtitle="Register with your city and a few interests so the matching backend has enough context to find relevant people."
+      title="Build a profile that feels like you."
+      subtitle="Add your city, interests, and a few personality cues so the matching system can connect you with people who fit your vibe."
       switchLabel="Register"
       switchHref="/login"
       switchText="Login"
+      stacked
     >
       <RegisterForm />
     </AuthShell>

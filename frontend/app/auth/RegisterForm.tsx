@@ -8,6 +8,45 @@ import { registerUser, saveAuthSession } from "../lib/auth-api";
 import { categories, cultures, genders } from "../lib/profile-options";
 import { nzLocations } from "../lib/nz-locations";
 
+type PersonalityState = {
+  chillToEnergetic: number;
+  talkativeToQuiet: number;
+  plannerToSpontaneous: number;
+  introvertToExtrovert: number;
+};
+
+const personalityTraits: Array<{
+  key: keyof PersonalityState;
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+}> = [
+  {
+    key: "chillToEnergetic",
+    label: "Chill ↔ Energetic",
+    leftLabel: "Chill",
+    rightLabel: "Energetic",
+  },
+  {
+    key: "talkativeToQuiet",
+    label: "Talkative ↔ Quiet",
+    leftLabel: "Talkative",
+    rightLabel: "Quiet",
+  },
+  {
+    key: "plannerToSpontaneous",
+    label: "Planner ↔ Spontaneous",
+    leftLabel: "Planner",
+    rightLabel: "Spontaneous",
+  },
+  {
+    key: "introvertToExtrovert",
+    label: "Introvert ↔ Extrovert",
+    leftLabel: "Introvert",
+    rightLabel: "Extrovert",
+  },
+];
+
 export default function RegisterForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -22,6 +61,12 @@ export default function RegisterForm() {
   const [gender, setGender] = useState("NotToTell");
   const [age, setAge] = useState<string>("");
   const [culture, setCulture] = useState("");
+  const [personality, setPersonality] = useState<PersonalityState>({
+    chillToEnergetic: 50,
+    talkativeToQuiet: 50,
+    plannerToSpontaneous: 50,
+    introvertToExtrovert: 50,
+  });
   const [bio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -87,6 +132,7 @@ export default function RegisterForm() {
         gender: gender || undefined,
         age: age ? Number(age) : undefined,
         culture: (culture as any) || undefined,
+        personality,
         interestSelections: parsedInterestSelections,
       });
 
@@ -114,212 +160,266 @@ export default function RegisterForm() {
         className="rounded-lg border border-zinc-200 bg-white p-6 shadow-xl shadow-zinc-200/70 sm:p-8"
         onSubmit={handleSubmit}
       >
-        <div className="grid gap-5 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">Email</span>
-            <input
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              required
-            />
-          </label>
+        <div className="space-y-8">
+          <section>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">Email</span>
+                <input
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                  required
+                />
+              </label>
 
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">
-              Username
-            </span>
-            <input
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              type="text"
-              value={userName}
-              onChange={(event) => setUserName(event.target.value)}
-              autoComplete="username"
-              maxLength={30}
-              required
-            />
-          </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">
+                  Username
+                </span>
+                <input
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  type="text"
+                  value={userName}
+                  onChange={(event) => setUserName(event.target.value)}
+                  autoComplete="username"
+                  maxLength={30}
+                  required
+                />
+              </label>
 
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">
-              Password
-            </span>
-            <input
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-              minLength={6}
-              required
-            />
-          </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">
+                  Password
+                </span>
+                <input
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="new-password"
+                  minLength={6}
+                  required
+                />
+              </label>
 
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">Region</span>
-            <select
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              value={region}
-              onChange={(e) => {
-                setRegion(e.target.value);
-                setCity("");
-              }}
-              required
-            >
-              {nzLocations.map((l) => (
-                <option key={l.region} value={l.region}>
-                  {l.region}
-                </option>
-              ))}
-            </select>
-          </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">Region</span>
+                <select
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  value={region}
+                  onChange={(e) => {
+                    setRegion(e.target.value);
+                    setCity("");
+                  }}
+                  required
+                >
+                  {nzLocations.map((l) => (
+                    <option key={l.region} value={l.region}>
+                      {l.region}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">City</span>
-            <select
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              required
-            >
-              <option value="">Select city</option>
-              {citiesForRegion.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">Gender</span>
-            <select
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-            >
-              {genders.map((g) => (
-                <option key={g.value} value={g.value}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">City</span>
+                <select
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                >
+                  <option value="">Select city</option>
+                  {citiesForRegion.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">Age</span>
-            <input
-              type="number"
-              min={18}
-              max={120}
-              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              placeholder="e.g. 28"
-            />
-          </label>
-        </div>
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">Gender</span>
+                <select
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                >
+                  {genders.map((g) => (
+                    <option key={g.value} value={g.value}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        <label className="block mt-4">
-          <span className="text-sm font-semibold text-zinc-800">Culture</span>
-          <select
-            className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-            value={culture}
-            onChange={(e) => setCulture(e.target.value)}
-          >
-            <option value="">Select (optional)</option>
-            {cultures.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">Age</span>
+                <input
+                  type="number"
+                  min={18}
+                  max={120}
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="e.g. 28"
+                />
+              </label>
 
-        <div className="mt-5 space-y-4">
-          {interestSelections.map((selection, index) => (
-          <div
-            key={`${selection.categoryId}-${index}`}
-            className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr] rounded-md border border-zinc-200 p-4"
-          >
-            <label className="block">
-              <span className="text-sm font-semibold text-zinc-800">
-                Interest category {index + 1}
-              </span>
-              <select
-                className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                value={selection.categoryId}
-                onChange={(event) => {
-                  const nextSelections = [...interestSelections];
-                  nextSelections[index] = {
-                    ...selection,
-                    categoryId: Number(event.target.value),
-                  };
-                  setInterestSelections(nextSelections);
-                }}
-              >
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
+              <label className="block">
+                <span className="text-sm font-semibold text-zinc-800">Culture</span>
+                <select
+                  className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                  value={culture}
+                  onChange={(e) => setCulture(e.target.value)}
+                >
+                  <option value="">Select (optional)</option>
+                  {cultures.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-md border border-zinc-200 p-4">
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-zinc-800">Personality</h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Optional sliders to help match you with people who fit your vibe.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {personalityTraits.map((trait) => (
+                  <label key={trait.key} className="block">
+                    <span className="text-sm font-semibold text-zinc-800">{trait.label}</span>
+                    <input
+                      className="mt-2 w-full accent-emerald-700"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={personality[trait.key]}
+                      onChange={(event) =>
+                        setPersonality((current) => ({
+                          ...current,
+                          [trait.key]: Number(event.target.value),
+                        }))
+                      }
+                    />
+                    <div className="mt-1 grid grid-cols-[4.5rem_1fr_4.5rem] items-center text-xs text-zinc-500">
+                      <span className="truncate">{trait.leftLabel}</span>
+                      <span className="text-center tabular-nums font-medium text-zinc-600">
+                        {personality[trait.key]}
+                      </span>
+                      <span className="truncate text-right">{trait.rightLabel}</span>
+                    </div>
+                  </label>
                 ))}
-              </select>
-            </label>
+              </div>
+            </div>
 
-            <label className="block">
-              <span className="text-sm font-semibold text-zinc-800">
-                Interests
-              </span>
-              <input
-                className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                type="text"
-                value={selection.interests}
-                onChange={(event) => {
-                  const nextSelections = [...interestSelections];
-                  nextSelections[index] = {
-                    ...selection,
-                    interests: event.target.value,
-                  };
-                  setInterestSelections(nextSelections);
-                }}
-                placeholder="hiking, photography, coffee"
-                required
-              />
-            </label>
-          </div>
-        ))}
+            <div className="rounded-md border border-zinc-200 p-4">
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-zinc-800">Interests</h3>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Add the interests you want to bring into matching.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {interestSelections.map((selection, index) => (
+                  <div
+                    key={`${selection.categoryId}-${index}`}
+                    className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr] rounded-md border border-zinc-200 p-4"
+                  >
+                    <label className="block">
+                      <span className="text-sm font-semibold text-zinc-800">
+                        Interest category {index + 1}
+                      </span>
+                      <select
+                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                        value={selection.categoryId}
+                        onChange={(event) => {
+                          const nextSelections = [...interestSelections];
+                          nextSelections[index] = {
+                            ...selection,
+                            categoryId: Number(event.target.value),
+                          };
+                          setInterestSelections(nextSelections);
+                        }}
+                      >
+                        {categories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-semibold text-zinc-800">
+                        Interests
+                      </span>
+                      <input
+                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                        type="text"
+                        value={selection.interests}
+                        onChange={(event) => {
+                          const nextSelections = [...interestSelections];
+                          nextSelections[index] = {
+                            ...selection,
+                            interests: event.target.value,
+                          };
+                          setInterestSelections(nextSelections);
+                        }}
+                        placeholder="hiking, photography, coffee"
+                        required
+                      />
+                    </label>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="flex h-11 items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white shadow-sm shadow-emerald-950/10 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-lg hover:shadow-emerald-950/15 active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-zinc-400"
+                  onClick={() => {
+                    if (interestSelections.length < 3) {
+                      setInterestSelections([
+                        ...interestSelections,
+                        { categoryId: 1, interests: "" },
+                      ]);
+                    }
+                  }}
+                  disabled={interestSelections.length >= 3}
+                >
+                  Add category
+                </button>
+
+                <button
+                  type="button"
+                  className="flex h-11 items-center justify-center gap-2 rounded-md bg-red-600 px-4 text-sm font-semibold text-white shadow-sm shadow-red-950/10 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-lg hover:shadow-red-950/15 active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-zinc-400"
+                  onClick={() => {
+                    if (interestSelections.length > 1) {
+                      setInterestSelections(interestSelections.slice(0, -1));
+                    }
+                  }}
+                  disabled={interestSelections.length <= 1}
+                >
+                  Remove category
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
-        
-        <button
-          type="button"
-          className="mt-4 rounded-md border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-800 disabled:opacity-50"
-          onClick={() => {
-            if (interestSelections.length < 3) {
-              setInterestSelections([
-                ...interestSelections,
-                { categoryId: 1, interests: "" },
-              ]);
-            }
-          }}
-          disabled={interestSelections.length >= 3}
-        >
-          Add category
-        </button>
-
-        <button
-          type="button"
-          className="mt-4 ml-4 rounded-md border border-red-600 px-4 py-2 text-sm font-semibold text-red-600 disabled:opacity-50"
-          onClick={() => {
-            if (interestSelections.length > 1) {
-              setInterestSelections(interestSelections.slice(0, -1));
-            }
-          }}
-          disabled={interestSelections.length <= 1}
-        >
-          Remove category
-        </button>
-
 
 
         <button
@@ -329,7 +429,7 @@ export default function RegisterForm() {
         >
           <svg
             aria-hidden="true"
-            className="h-5 w-5"
+            className="h-5 w-5 shrink-0 flex-none"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -341,7 +441,7 @@ export default function RegisterForm() {
               d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3M12 6.75A3.75 3.75 0 1 1 4.5 6.75a3.75 3.75 0 0 1 7.5 0ZM3 20.25a7.5 7.5 0 0 1 15 0"
             />
           </svg>
-          {isSubmitting ? "Creating account..." : "Create account"}
+          <span>{isSubmitting ? "Creating account..." : "Create account"}</span>
         </button>
 
         <p className="mt-5 text-center text-sm text-zinc-600">
