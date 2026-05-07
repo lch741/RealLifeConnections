@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Toast, { type ToastState } from "../../components/Toast";
 import {
   getProfile,
@@ -149,6 +150,7 @@ function buildPersonalityPayload(personality: PersonalityState) {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userName, setUserName] = useState("");
   const [region, setRegion] = useState(nzLocations[0]?.region ?? "");
@@ -441,9 +443,43 @@ export default function ProfilePage() {
     <main className="min-h-screen bg-[#f8faf7] text-zinc-950">
       <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8 lg:px-10">
         <header className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-5">
-          <Link className="text-lg font-semibold tracking-wide" href="/">
-            RealLifeConnections
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link className="text-lg font-semibold tracking-wide" href="/">
+              RealLifeConnections
+            </Link>
+            <button
+              type="button"
+              className={profile?.isVerified
+                ? "hidden sm:inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-700"
+                : "hidden sm:inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition cursor-not-allowed opacity-80"
+              }
+              onClick={() => {
+                if (profile?.isVerified) {
+                  router.push("/meetups/create");
+                } else {
+                  showToast({ tone: "error", message: "You must verify your avatar before creating or matching events." });
+                }
+              }}
+            >
+              Create / Match Event
+            </button>
+            <button
+              type="button"
+              className={profile?.isVerified
+                ? "sm:hidden inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1 text-sm font-semibold text-white shadow transition hover:bg-emerald-700"
+                : "sm:hidden inline-flex items-center gap-2 rounded-full bg-red-50 border border-red-300 px-3 py-1 text-sm font-semibold text-red-700 shadow-sm transition cursor-not-allowed opacity-80"
+              }
+              onClick={() => {
+                if (profile?.isVerified) {
+                  router.push("/meetups/create");
+                } else {
+                  showToast({ tone: "error", message: "You must verify your avatar before creating or matching events." });
+                }
+              }}
+            >
+              Create
+            </button>
+          </div>
           <button
             type="button"
             className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-500"
@@ -458,8 +494,9 @@ export default function ProfilePage() {
         <section className="grid flex-1 gap-8 py-8 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="order-first lg:order-none">
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-              <p className="text-sm font-semibold text-zinc-800">Avatar verification</p>
-              <p className="mt-1 text-xs text-zinc-600">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Avatar</p>
+              <h2 className="mt-4 text-xl font-bold leading-tight text-zinc-950 sm:text-2xl">Verify your avatar.</h2>
+              <p className="mt-3 text-base leading-7 text-zinc-650">
                 Upload your real-person avatar and capture a live photo from camera to verify.
               </p>
 
@@ -479,34 +516,56 @@ export default function ProfilePage() {
                       </div>
                     )}
                   </div>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0] ?? null;
-                      setAvatarFile(file);
-                      if (!file) {
-                        setAvatarPreviewUrl(profile?.avatarUrl ?? null);
-                        return;
-                      }
+                    <input
+                      id="avatar-file-input"
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        setAvatarFile(file);
+                        if (!file) {
+                          setAvatarPreviewUrl(profile?.avatarUrl ?? null);
+                          return;
+                        }
 
-                      const nextPreviewUrl = URL.createObjectURL(file);
-                      if (avatarPreviewUrl?.startsWith("blob:")) {
-                        URL.revokeObjectURL(avatarPreviewUrl);
-                      }
-                      setAvatarPreviewUrl(nextPreviewUrl);
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="h-11 w-full rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
-                    onClick={uploadAvatarImage}
-                    disabled={isSavingAvatar}
-                  >
-                    {isSavingAvatar ? "Uploading avatar..." : "Upload avatar"}
-                  </button>
-                </div>
+                        const nextPreviewUrl = URL.createObjectURL(file);
+                        if (avatarPreviewUrl?.startsWith("blob:")) {
+                          URL.revokeObjectURL(avatarPreviewUrl);
+                        }
+                        setAvatarPreviewUrl(nextPreviewUrl);
+                      }}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      {!avatarFile ? (
+                        <label
+                          htmlFor="avatar-file-input"
+                          className="flex h-11 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-zinc-300 bg-zinc-50 px-3 text-sm font-semibold text-zinc-700 transition hover:border-emerald-400 hover:bg-emerald-50"
+                        >
+                          Choose photo
+                        </label>
+                      ) : (
+                        <button
+                          type="button"
+                          className="h-11 rounded-md border-2 border-dashed border-red-300 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:border-red-400 hover:bg-red-100"
+                          onClick={() => {
+                            setAvatarFile(null);
+                            setAvatarPreviewUrl(profile?.avatarUrl ?? null);
+                          }}
+                        >
+                          Unselect photo
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="h-11 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
+                        onClick={uploadAvatarImage}
+                        disabled={!avatarFile || isSavingAvatar}
+                      >
+                        {isSavingAvatar ? "Uploading..." : "Upload"}
+                      </button>
+                    </div>
+                  </div>
 
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-zinc-700">Live camera photo</p>
@@ -530,13 +589,23 @@ export default function ProfilePage() {
                   <canvas ref={canvasRef} className="hidden" />
 
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      className="h-11 rounded-md border border-zinc-400 bg-white px-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
-                      onClick={startCamera}
-                    >
-                      {isCameraActive ? "Restart camera" : "Open camera"}
-                    </button>
+                    {!isCameraActive ? (
+                      <button
+                        type="button"
+                        className="h-11 rounded-md border border-zinc-400 bg-white px-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
+                        onClick={startCamera}
+                      >
+                        Open camera
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="h-11 rounded-md border border-red-300 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                        onClick={stopCamera}
+                      >
+                        Close camera
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="h-11 rounded-md border border-zinc-400 bg-white px-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
@@ -688,25 +757,25 @@ export default function ProfilePage() {
                         placeholder="e.g. 28"
                       />
                     </label>
-                  </div>
 
-                  <label className="block">
-                    <span className="text-sm font-semibold text-zinc-800">
-                      Culture
-                    </span>
-                    <select
-                      className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                      value={culture}
-                      onChange={(event) => setCulture(event.target.value as CultureOption | "")}
-                    >
-                      <option value="">Select (optional)</option>
-                      {cultures.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                    <label className="block">
+                      <span className="text-sm font-semibold text-zinc-800">
+                        Culture
+                      </span>
+                      <select
+                        className="mt-2 h-12 w-full rounded-md border border-zinc-300 bg-white px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                        value={culture}
+                        onChange={(event) => setCulture(event.target.value as CultureOption | "")}
+                      >
+                        <option value="">Select (optional)</option>
+                        {cultures.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
 
                   <label className="block">
                     <span className="text-sm font-semibold text-zinc-800">
