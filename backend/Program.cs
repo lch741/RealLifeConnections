@@ -46,6 +46,8 @@ builder.Services.AddScoped<IChatRepository, ChatRepository>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMeetupRepository, MeetupRepository>();
+builder.Services.AddScoped<IMeetupService, MeetupService>();
 if (builder.Environment.IsDevelopment())
     builder.Services.AddScoped<IAzureFaceService, MockAzureFaceService>();
 else
