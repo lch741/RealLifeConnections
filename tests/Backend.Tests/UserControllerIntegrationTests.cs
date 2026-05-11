@@ -10,18 +10,12 @@ using System.Text;
 using System.Threading.Tasks;
 using backend.Data;
 using backend.DTOs;
-using backend.Interfaces;
 using backend.Models;
-using backend.Repository;
-using backend.Service;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
-using BackendProgram = global::Program;
 
 namespace Backend.Tests
 {
@@ -30,7 +24,7 @@ namespace Backend.Tests
         [Fact]
         public async Task RegisterAndLogin_PersistsUserAndReturnsToken()
         {
-            using var factory = CreateFactory();
+            using var factory = IntegrationTestHelpers.CreateFactory();
             using var client = factory.CreateClient();
 
             var registerDto = new RegisterUserDto
@@ -82,10 +76,10 @@ namespace Backend.Tests
         [Fact]
         public async Task GetAndUpdateProfile_ReturnsUpdatedProfileData()
         {
-            using var factory = CreateFactory();
+            using var factory = IntegrationTestHelpers.CreateFactory();
             using var client = factory.CreateClient();
 
-            var auth = await RegisterAndLoginAsync(client, "profile-user@example.com", "profileuser");
+            var auth = await IntegrationTestHelpers.RegisterAndLoginAsync(client, "profile-user@example.com", "profileuser");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
 
             var profileResponseMessage = await client.GetAsync("/api/user/profile");
@@ -152,10 +146,10 @@ namespace Backend.Tests
         [Fact]
         public async Task SaveAvatarAndVerifyFace_StoresAvatarAndApprovesVerification()
         {
-            using var factory = CreateFactory();
+            using var factory = IntegrationTestHelpers.CreateFactory();
             using var client = factory.CreateClient();
 
-            var auth = await RegisterAndLoginAsync(client, "avatar-user@example.com", "avataruser");
+            var auth = await IntegrationTestHelpers.RegisterAndLoginAsync(client, "avatar-user@example.com", "avataruser");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
 
             var avatarFile = CreateImageFile("avatar.jpg", "image/jpeg", "avatar-bytes");
@@ -194,50 +188,6 @@ namespace Backend.Tests
             Assert.Equal(2, storedUser.Verifications.Count);
         }
 
-        private static async Task<AuthenticatedUser> RegisterAndLoginAsync(HttpClient client, string email, string userName)
-        {
-            var registerDto = new RegisterUserDto
-            {
-                Email = email,
-                UserName = userName,
-                Password = "Password123!!",
-                Region = "TestRegion",
-                Suburb = "TestSuburb",
-                InterestSelections = new List<RegisterInterestSelectionDto>
-                {
-                    new RegisterInterestSelectionDto
-                    {
-                        CategoryId = 1,
-                        Interests = new List<string> { "Coffee" }
-                    }
-                }
-            };
-
-            var registerResponse = await client.PostAsJsonAsync("/api/user/register", registerDto);
-            Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-            var loginResponse = await client.PostAsJsonAsync("/api/user/login", new LoginUserDto
-            {
-                Email = email,
-                Password = registerDto.Password
-            });
-
-            Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-            var authResponse = await loginResponse.Content.ReadFromJsonAsync<AuthResponseDto>();
-            Assert.NotNull(authResponse);
-
-            return new AuthenticatedUser(email, userName, authResponse!.Token);
-        }
-
-        private static IntegrationWebApplicationFactory CreateFactory()
-        {
-            var factory = new IntegrationWebApplicationFactory();
-            using var scope = factory.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
-            context.Database.EnsureCreated();
-            return factory;
-        }
 
         private static IFormFile CreateImageFile(string fileName, string contentType, string contents)
         {
@@ -270,7 +220,6 @@ namespace Backend.Tests
             return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(actualHash, expectedHash);
         }
 
-        private sealed record AuthenticatedUser(string Email, string UserName, string Token);
 
         private static async Task<HttpResponseMessage> PostMultipartAsync(HttpClient client, string requestUri, IFormFile file, string formFieldName)
         {
