@@ -2,9 +2,21 @@ using System.ComponentModel.DataAnnotations;
 
 namespace backend.Models
 {
+    public enum ActivityType
+    {
+        Cafe = 0,
+        Park = 1,
+        Restaurant = 2,
+        Gym = 3,
+        Bar = 4,
+        Custom = 5,
+    }
+
     public class Activity
     {
         public int Id { get; set; }
+
+        public ActivityType Type { get; set; } = ActivityType.Custom;
 
         [Required]
         [MaxLength(50)]

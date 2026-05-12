@@ -11,16 +11,21 @@ namespace backend.Mapper
             {
                 Id = activity.Id,
                 Name = activity.Name,
-                Description = activity.Description
+                Description = activity.Description,
+                Type = activity.Type.ToString()
             };
         }
 
-        public static Activity ToActivityModel(string name, string? description = null)
+        public static Activity ToActivityModel(
+            string name,
+            string? description = null,
+            ActivityType type = ActivityType.Custom)
         {
             return new Activity
             {
                 Name = name,
-                Description = description
+                Description = description,
+                Type = type
             };
         }
 

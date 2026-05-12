@@ -153,12 +153,12 @@ namespace backend.Data
             );
 
             modelBuilder.Entity<Activity>().HasData(
-                new Activity { Id = 1, Name = "Coffee", Description = "Coffee meetups" },
-                new Activity { Id = 2, Name = "Walk", Description = "Walking and exploring" },
-                new Activity { Id = 3, Name = "Gym", Description = "Fitness and workouts" },
-                new Activity { Id = 4, Name = "Food", Description = "Dining and meals" },
-                new Activity { Id = 5, Name = "Drinks", Description = "Drinks and hangouts" },
-                new Activity { Id = 6, Name = "Explore", Description = "Explore somewhere new" }
+                new Activity { Id = 1, Name = "Coffee", Description = "Coffee meetups", Type = ActivityType.Cafe },
+                new Activity { Id = 2, Name = "Walk", Description = "Walking and exploring", Type = ActivityType.Park },
+                new Activity { Id = 3, Name = "Gym", Description = "Fitness and workouts", Type = ActivityType.Gym },
+                new Activity { Id = 4, Name = "Food", Description = "Dining and meals", Type = ActivityType.Restaurant },
+                new Activity { Id = 5, Name = "Drinks", Description = "Drinks and hangouts", Type = ActivityType.Bar },
+                new Activity { Id = 6, Name = "Explore", Description = "Explore somewhere new", Type = ActivityType.Custom }
             );
         }
     }
