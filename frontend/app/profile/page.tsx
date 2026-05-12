@@ -243,6 +243,14 @@ export default function ProfilePage() {
     }
   }
 
+  function clearCameraCapture() {
+    setCameraCaptureBlob(null);
+    if (cameraCaptureUrl) {
+      URL.revokeObjectURL(cameraCaptureUrl);
+    }
+    setCameraCaptureUrl(null);
+  }
+
   function captureFromCamera() {
     if (!videoRef.current || !canvasRef.current) {
       return;
@@ -278,6 +286,7 @@ export default function ProfilePage() {
           URL.revokeObjectURL(cameraCaptureUrl);
         }
         setCameraCaptureUrl(URL.createObjectURL(blob));
+        stopCamera();
         showToast({ tone: "info", message: "Live photo captured. You can verify now." });
       },
       "image/jpeg",
@@ -606,14 +615,24 @@ export default function ProfilePage() {
                         Close camera
                       </button>
                     )}
-                    <button
-                      type="button"
-                      className="h-11 rounded-md border border-zinc-400 bg-white px-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
-                      onClick={captureFromCamera}
-                      disabled={!isCameraActive}
-                    >
-                      Capture photo
-                    </button>
+                    {cameraCaptureUrl ? (
+                      <button
+                        type="button"
+                        className="h-11 rounded-md border border-red-300 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                        onClick={clearCameraCapture}
+                      >
+                        Discard photo
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="h-11 rounded-md border border-zinc-400 bg-white px-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
+                        onClick={captureFromCamera}
+                        disabled={!isCameraActive}
+                      >
+                        Capture photo
+                      </button>
+                    )}
                   </div>
 
                   <button
