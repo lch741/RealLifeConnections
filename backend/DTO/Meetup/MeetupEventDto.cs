@@ -1,3 +1,5 @@
+using backend.DTO;
+
 namespace backend.DTO.Meetup
 {
     /// <summary>
@@ -12,8 +14,7 @@ namespace backend.DTO.Meetup
         public required string Suburb { get; set; }
         public string? LocationName { get; set; }
 
-        public int ActivityId { get; set; }
-        public required string ActivityName { get; set; }
+        public List<ActivityDto> Activities { get; set; } = new();
 
         public DateTime EventDate { get; set; }
         public TimeSpan StartTime { get; set; }

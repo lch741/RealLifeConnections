@@ -45,7 +45,7 @@ namespace backend.Repository
         public Task<List<MeetupEvent>> GetByActivityAsync(int activityId)
         {
             return BaseQuery()
-                .Where(meetup => meetup.ActivityId == activityId)
+                .Where(meetup => meetup.Activities.Any(activity => activity.Id == activityId))
                 .OrderBy(meetup => meetup.EventDate)
                 .ThenBy(meetup => meetup.StartTime)
                 .ToListAsync();
@@ -192,7 +192,7 @@ namespace backend.Repository
         {
             return _context.MeetupEvents
                 .Include(meetup => meetup.Creator)
-                .Include(meetup => meetup.Activity)
+                .Include(meetup => meetup.Activities)
                 .Include(meetup => meetup.Participants)
                 .ThenInclude(participant => participant.User)
                 .Include(meetup => meetup.LocationSuggestions)

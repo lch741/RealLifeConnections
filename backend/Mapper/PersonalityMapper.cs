@@ -153,7 +153,11 @@ namespace backend.Mapper
                 Region = meetup.Region,
                 Suburb = meetup.Suburb,
                 LocationName = meetup.LocationName,
-                ActivityName = meetup.Activity?.Name ?? "Unknown",
+                ActivityName = meetup.Activities.Count == 0
+                    ? "Unknown"
+                    : string.Join(", ", meetup.Activities
+                        .OrderBy(activity => activity.Order)
+                        .Select(activity => activity.Name)),
                 EventDate = meetup.EventDate,
                 StartTime = meetup.StartTime,
                 EndTime = meetup.EndTime,

@@ -1,3 +1,4 @@
+using backend.DTO;
 using backend.DTO.Meetup;
 using backend.Models;
 
@@ -15,8 +16,10 @@ namespace backend.Mapper
                 Region = meetup.Region,
                 Suburb = meetup.Suburb,
                 LocationName = meetup.LocationName,
-                ActivityId = meetup.ActivityId,
-                ActivityName = meetup.Activity?.Name ?? "Unknown Activity",
+                Activities = meetup.Activities
+                    .OrderBy(activity => activity.Order)
+                    .Select(ActivityMapper.ToActivityDto)
+                    .ToList(),
                 EventDate = meetup.EventDate,
                 StartTime = meetup.StartTime,
                 EndTime = meetup.EndTime,
@@ -69,7 +72,7 @@ namespace backend.Mapper
             };
         }
 
-        public static MeetupEvent ToMeetupModel(CreateMeetupDto dto, AppUser creator, Activity activity)
+        public static MeetupEvent ToMeetupModel(CreateMeetupDto dto, AppUser creator, List<Activity> activities)
         {
             return new MeetupEvent
             {
@@ -80,8 +83,7 @@ namespace backend.Mapper
                 Region = dto.Region,
                 Suburb = dto.Suburb,
                 LocationName = dto.LocationName,
-                ActivityId = dto.ActivityId,
-                Activity = activity,
+                Activities = activities,
                 EventDate = dto.EventDate,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
@@ -117,11 +119,6 @@ namespace backend.Mapper
             if (dto.LocationName != null)
             {
                 meetup.LocationName = string.IsNullOrWhiteSpace(dto.LocationName) ? null : dto.LocationName.Trim();
-            }
-
-            if (dto.ActivityId.HasValue)
-            {
-                meetup.ActivityId = dto.ActivityId.Value;
             }
 
             if (dto.EventDate.HasValue)
@@ -165,5 +162,6 @@ namespace backend.Mapper
                 CreatedAt = DateTime.UtcNow
             };
         }
+
     }
 }

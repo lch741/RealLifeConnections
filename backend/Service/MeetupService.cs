@@ -30,15 +30,8 @@ namespace backend.Service
             var user = await GetCurrentUserAsync(principal);
             EnsureVerified(user);
 
-            var activity = await _context.Activities
-                .FirstOrDefaultAsync(item => item.Id == dto.ActivityId);
-
-            if (activity == null)
-            {
-                throw new InvalidOperationException("Activity not found.");
-            }
-
-            var meetup = MeetupMapper.ToMeetupModel(dto, user, activity);
+            var activities = BuildActivities(dto.Activities);
+            var meetup = MeetupMapper.ToMeetupModel(dto, user, activities);
             var created = await _meetupRepository.CreateAsync(meetup);
             return MeetupMapper.ToMeetupEventDto(created);
         }
@@ -107,18 +100,12 @@ namespace backend.Service
             var meetup = await _meetupRepository.GetByIdAsync(meetupId);
             EnsureCreator(user, meetup);
 
-            if (dto.ActivityId.HasValue)
+            if (dto.Activities != null)
             {
-                var activity = await _context.Activities
-                    .FirstOrDefaultAsync(item => item.Id == dto.ActivityId.Value);
+                _context.Activities.RemoveRange(meetup.Activities);
 
-                if (activity == null)
-                {
-                    throw new InvalidOperationException("Activity not found.");
-                }
-
-                meetup.ActivityId = activity.Id;
-                meetup.Activity = activity;
+                var activities = BuildActivities(dto.Activities);
+                meetup.Activities = activities;
             }
 
             MeetupMapper.ApplyMeetupUpdate(meetup, dto);
@@ -258,6 +245,57 @@ namespace backend.Service
             EnsureCreator(user, meetup);
 
             await _meetupRepository.RemoveParticipantAsync(meetupId, participantId);
+        }
+
+        private static List<Activity> BuildActivities(IReadOnlyCollection<ActivityInputDto> activityInputs)
+        {
+            if (activityInputs.Count == 0)
+            {
+                throw new InvalidOperationException("At least one activity is required.");
+            }
+
+            if (activityInputs.Count > 3)
+            {
+                throw new InvalidOperationException("A meetup can have up to 3 activities.");
+            }
+
+            var seenOrders = new HashSet<int>();
+            var activities = new List<Activity>(activityInputs.Count);
+
+            foreach (var input in activityInputs)
+            {
+                if (string.IsNullOrWhiteSpace(input.Name))
+                {
+                    throw new InvalidOperationException("Activity name is required.");
+                }
+
+                if (input.Order is < 1 or > 3)
+                {
+                    throw new InvalidOperationException("Activity order must be between 1 and 3.");
+                }
+
+                if (!seenOrders.Add(input.Order))
+                {
+                    throw new InvalidOperationException("Activity order must be unique.");
+                }
+
+                if (!Enum.TryParse<ActivityType>(input.Type?.Trim(), true, out var parsedType))
+                {
+                    throw new InvalidOperationException("Invalid activity type.");
+                }
+
+                activities.Add(new Activity
+                {
+                    Name = input.Name.Trim(),
+                    Description = string.IsNullOrWhiteSpace(input.Description)
+                        ? null
+                        : input.Description.Trim(),
+                    Type = parsedType,
+                    Order = input.Order
+                });
+            }
+
+            return activities;
         }
 
         public async Task<List<UserMeetupDto>> GetPendingParticipantsAsync(int meetupId)

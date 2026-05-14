@@ -26,7 +26,9 @@ namespace backend.DTO.Meetup
         public string? LocationName { get; set; }
 
         [Required]
-        public int ActivityId { get; set; }
+        [MinLength(1)]
+        [MaxLength(3)]
+        public List<ActivityInputDto> Activities { get; set; } = new();
 
         [Required]
         public DateTime EventDate { get; set; }
