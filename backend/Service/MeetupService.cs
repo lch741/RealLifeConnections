@@ -291,7 +291,8 @@ namespace backend.Service
                         ? null
                         : input.Description.Trim(),
                     Type = parsedType,
-                    Order = input.Order
+                    Order = input.Order,
+                    MeetupEvent = null!
                 });
             }
 

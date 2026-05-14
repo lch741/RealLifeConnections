@@ -19,13 +19,15 @@ namespace backend.Mapper
         public static Activity ToActivityModel(
             string name,
             string? description = null,
-            ActivityType type = ActivityType.Custom)
+            ActivityType type = ActivityType.Custom,
+            MeetupEvent? meetupEvent = null)
         {
             return new Activity
             {
                 Name = name,
                 Description = description,
-                Type = type
+                Type = type,
+                MeetupEvent = meetupEvent ?? null!
             };
         }
 
