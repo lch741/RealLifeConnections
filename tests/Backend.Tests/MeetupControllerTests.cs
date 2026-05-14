@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using backend.Controllers;
+using backend.DTO;
 using backend.DTO.Meetup;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -43,7 +44,10 @@ namespace Backend.Tests
                 Title = "Coffee meetup",
                 Region = "TestRegion",
                 Suburb = "TestSuburb",
-                ActivityId = 1,
+                Activities = new List<ActivityInputDto>
+                {
+                    new ActivityInputDto { Name = "Coffee", Order = 1 }
+                },
                 EventDate = DateTime.UtcNow.Date.AddDays(1),
                 StartTime = new TimeSpan(9, 0, 0),
                 MaxParticipants = 5
@@ -55,8 +59,10 @@ namespace Backend.Tests
                 Title = dto.Title,
                 Region = dto.Region,
                 Suburb = dto.Suburb,
-                ActivityId = dto.ActivityId,
-                ActivityName = "Coffee",
+                Activities = new List<ActivityDto>
+                {
+                    new ActivityDto { Id = 1, Name = "Coffee" }
+                },
                 EventDate = dto.EventDate,
                 StartTime = dto.StartTime,
                 MaxParticipants = dto.MaxParticipants,
@@ -84,7 +90,10 @@ namespace Backend.Tests
                 Title = "Coffee meetup",
                 Region = "TestRegion",
                 Suburb = "TestSuburb",
-                ActivityId = 1,
+                Activities = new List<ActivityInputDto>
+                {
+                    new ActivityInputDto { Name = "Coffee", Order = 1 }
+                },
                 EventDate = DateTime.UtcNow.Date.AddDays(1),
                 StartTime = new TimeSpan(9, 0, 0),
                 MaxParticipants = 5
@@ -109,7 +118,10 @@ namespace Backend.Tests
                 Title = "Coffee meetup",
                 Region = "TestRegion",
                 Suburb = "TestSuburb",
-                ActivityId = 1,
+                Activities = new List<ActivityInputDto>
+                {
+                    new ActivityInputDto { Name = "Coffee", Order = 1 }
+                },
                 EventDate = DateTime.UtcNow.Date.AddDays(1),
                 StartTime = new TimeSpan(9, 0, 0),
                 MaxParticipants = 5
@@ -136,8 +148,10 @@ namespace Backend.Tests
                 Title = "Test meetup",
                 Region = "TestRegion",
                 Suburb = "TestSuburb",
-                ActivityId = 1,
-                ActivityName = "Coffee",
+                Activities = new List<ActivityDto>
+                {
+                    new ActivityDto { Id = 1, Name = "Coffee" }
+                },
                 EventDate = DateTime.UtcNow.Date.AddDays(1),
                 StartTime = new TimeSpan(9, 0, 0),
                 MaxParticipants = 5,
@@ -183,8 +197,10 @@ namespace Backend.Tests
                     Title = "My meetup",
                     Region = "TestRegion",
                     Suburb = "TestSuburb",
-                    ActivityId = 1,
-                    ActivityName = "Coffee",
+                    Activities = new List<ActivityDto>
+                    {
+                        new ActivityDto { Id = 1, Name = "Coffee" }
+                    },
                     EventDate = DateTime.UtcNow.Date.AddDays(1),
                     StartTime = new TimeSpan(9, 0, 0),
                     MaxParticipants = 5,
@@ -235,8 +251,10 @@ namespace Backend.Tests
                 Title = "Updated title",
                 Region = "TestRegion",
                 Suburb = "TestSuburb",
-                ActivityId = 1,
-                ActivityName = "Coffee",
+                Activities = new List<ActivityDto>
+                {
+                    new ActivityDto { Id = 1, Name = "Coffee" }
+                },
                 EventDate = DateTime.UtcNow.Date.AddDays(1),
                 StartTime = new TimeSpan(9, 0, 0),
                 MaxParticipants = 5,
@@ -322,8 +340,10 @@ namespace Backend.Tests
                 Title = "Test meetup",
                 Region = "TestRegion",
                 Suburb = "TestSuburb",
-                ActivityId = 1,
-                ActivityName = "Coffee",
+                Activities = new List<ActivityDto>
+                {
+                    new ActivityDto { Id = 1, Name = "Coffee" }
+                },
                 EventDate = DateTime.UtcNow.Date.AddDays(1),
                 StartTime = new TimeSpan(9, 0, 0),
                 MaxParticipants = 5,

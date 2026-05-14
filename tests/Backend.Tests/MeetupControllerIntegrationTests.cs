@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -92,7 +93,10 @@ namespace Backend.Tests
                 Region = "TestRegion",
                 Suburb = "TestSuburb",
                 LocationName = "Test Location",
-                ActivityId = 1,
+                Activities = new List<ActivityInputDto>
+                {
+                    new ActivityInputDto { Name = "Coffee", Order = 1 }
+                },
                 EventDate = DateTime.UtcNow.Date.AddDays(2),
                 StartTime = TimeSpan.FromHours(10),
                 EndTime = TimeSpan.FromHours(12),
