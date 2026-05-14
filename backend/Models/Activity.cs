@@ -16,6 +16,9 @@ namespace backend.Models
     {
         public int Id { get; set; }
 
+        public int MeetupEventId { get; set; }
+        public required MeetupEvent MeetupEvent { get; set; }
+
         public ActivityType Type { get; set; } = ActivityType.Custom;
 
         [Required]
@@ -25,8 +28,8 @@ namespace backend.Models
         [MaxLength(200)]
         public string? Description { get; set; }
 
-        // Navigation property
-        public List<MeetupEvent> MeetupEvents { get; set; } = new();
+        [Range(1, 3)]
+        public int Order { get; set; }
     }
 }
 

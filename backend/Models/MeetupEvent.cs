@@ -37,9 +37,8 @@ namespace backend.Models
         [MaxLength(100)]
         public string? LocationName { get; set; }  // e.g., "Bondi Beach", "Central Park"
 
-        // Activity: One event = one activity
-        public int ActivityId { get; set; }
-        public required Activity Activity { get; set; }
+        // Activities: up to three per meetup
+        public List<Activity> Activities { get; set; } = new();
 
         // Availability
         public DateTime EventDate { get; set; }

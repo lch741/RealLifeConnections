@@ -79,12 +79,16 @@ namespace backend.Data
                 .HasForeignKey(um => um.MeetupEventId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // MeetupEvent-Activity one-to-many (simplified: one event = one activity)
-            modelBuilder.Entity<MeetupEvent>()
-                .HasOne(m => m.Activity)
-                .WithMany(a => a.MeetupEvents)
-                .HasForeignKey(m => m.ActivityId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // MeetupEvent-Activity: one meetup owns multiple ordered activities
+            modelBuilder.Entity<Activity>()
+                .HasOne(a => a.MeetupEvent)
+                .WithMany(m => m.Activities)
+                .HasForeignKey(a => a.MeetupEventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Activity>()
+                .HasIndex(a => new { a.MeetupEventId, a.Order })
+                .IsUnique();
 
             modelBuilder.Entity<MeetupLocationSuggestion>()
                 .HasOne(s => s.MeetupEvent)
@@ -152,14 +156,6 @@ namespace backend.Data
                 new InterestCategory { Id = 8, Name = "Other" }
             );
 
-            modelBuilder.Entity<Activity>().HasData(
-                new Activity { Id = 1, Name = "Coffee", Description = "Coffee meetups", Type = ActivityType.Cafe },
-                new Activity { Id = 2, Name = "Walk", Description = "Walking and exploring", Type = ActivityType.Park },
-                new Activity { Id = 3, Name = "Gym", Description = "Fitness and workouts", Type = ActivityType.Gym },
-                new Activity { Id = 4, Name = "Food", Description = "Dining and meals", Type = ActivityType.Restaurant },
-                new Activity { Id = 5, Name = "Drinks", Description = "Drinks and hangouts", Type = ActivityType.Bar },
-                new Activity { Id = 6, Name = "Explore", Description = "Explore somewhere new", Type = ActivityType.Custom }
-            );
         }
     }
 }
