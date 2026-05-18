@@ -150,5 +150,71 @@ namespace backend.Controllers
             }
         }
 
+        [HttpPost("{meetupId:int}/apply")]
+        public async Task<IActionResult> Apply(int meetupId)
+        {
+            try
+            {
+                var result = await _meetupService.JoinMeetupAsync(User, meetupId);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("{meetupId:int}/quit")]
+        public async Task<IActionResult> Quit(int meetupId)
+        {
+            try
+            {
+                await _meetupService.LeaveMeetupAsync(User, meetupId);
+                return Ok(new { message = "Meetup left." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("{meetupId:int}/approve/{participantId:int}")]
+        public async Task<IActionResult> ApproveParticipant(int meetupId, int participantId)
+        {
+            try
+            {
+                var result = await _meetupService.ConfirmParticipantAsync(User, meetupId, participantId);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
     }
 }
