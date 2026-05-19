@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using backend.Controllers;
 using backend.DTO;
 using backend.DTO.Meetup;
+using backend.DTO.Matching;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -233,6 +234,7 @@ namespace Backend.Tests
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
             Assert.Equal("Not authorized", unauthorized.Value);
         }
+
         #endregion
 
         #region Update Tests
@@ -526,6 +528,76 @@ namespace Backend.Tests
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
             Assert.Equal("Not authorized", unauthorized.Value);
         }
+
         #endregion
+
+        
+        #region GetMatchedMeetups Tests
+        [Fact]
+        public async Task GetMatchedMeetups_ReturnsOkResult_WhenSuccessful()
+        {
+            SetUser();
+            var expected = new List<MeetupMatchDto>
+            {
+                new MeetupMatchDto
+                {
+                    MeetupId = 1,
+                    Title = "Matched meetup",
+                    Region = "TestRegion",
+                    Suburb = "TestSuburb",
+                    ActivityName = "Coffee",
+                    EventDate = DateTime.UtcNow.Date.AddDays(2),
+                    StartTime = new TimeSpan(10, 0, 0),
+                    MaxParticipants = 5,
+                    CurrentParticipants = 1,
+                    Status = "Open",
+                    MatchScore = 85,
+                    CreatorId = 2,
+                    CreatorName = "creator"
+                }
+            };
+
+            _mockMeetupService
+                .Setup(s => s.GetMatchedMeetupsAsync(It.IsAny<ClaimsPrincipal>(), "Cafe", "TestSuburb", 20))
+                .ReturnsAsync(expected);
+
+            var result = await _controller.GetMatchedMeetups("Cafe", "TestSuburb", 20);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var value = Assert.IsType<List<MeetupMatchDto>>(ok.Value);
+            Assert.Single(value);
+            Assert.Equal(85, value[0].MatchScore);
+        }
+
+        [Fact]
+        public async Task GetMatchedMeetups_ReturnsBadRequest_WhenServiceThrows()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.GetMatchedMeetupsAsync(It.IsAny<ClaimsPrincipal>(), "Cafe", "TestSuburb", 20))
+                .ThrowsAsync(new InvalidOperationException("Invalid activity type."));
+
+            var result = await _controller.GetMatchedMeetups("Cafe", "TestSuburb", 20);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Invalid activity type.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task GetMatchedMeetups_ReturnsUnauthorized_WhenUserNotAuthenticated()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.GetMatchedMeetupsAsync(It.IsAny<ClaimsPrincipal>(), "Cafe", "TestSuburb", 20))
+                .ThrowsAsync(new UnauthorizedAccessException("Not authorized"));
+
+            var result = await _controller.GetMatchedMeetups("Cafe", "TestSuburb", 20);
+
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.Equal("Not authorized", unauthorized.Value);
+        }
+        #endregion
+
+
     }
 }
