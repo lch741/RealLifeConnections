@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using backend.Data;
+using backend.DTO.Matching;
 using backend.DTO.Meetup;
 using backend.Interfaces;
 using backend.Mapper;
@@ -11,6 +12,10 @@ namespace backend.Service
 {
     public class MeetupService : IMeetupService
     {
+        private const int PersonalityWeight = 50;
+        private const int DayPreferenceWeight = 20;
+        private const int TimePreferenceWeight = 20;
+        private const int DistancePreferenceWeight = 10;
         private readonly ApplicationDBContext _context;
         private readonly IMeetupRepository _meetupRepository;
         private readonly IUserRepository _userRepository;
@@ -89,6 +94,43 @@ namespace backend.Service
 
             return meetups
                 .Select(meetup => MeetupMapper.ToMeetupEventDto(meetup))
+                .ToList();
+        }
+
+        public async Task<List<MeetupMatchDto>> GetMatchedMeetupsAsync(
+            ClaimsPrincipal principal,
+            string activityType,
+            string suburb,
+            int limit = 20)
+        {
+            var user = await GetCurrentUserAsync(principal);
+            EnsureVerified(user);
+
+            if (string.IsNullOrWhiteSpace(activityType))
+            {
+                throw new InvalidOperationException("Activity type is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(suburb))
+            {
+                throw new InvalidOperationException("Suburb is required.");
+            }
+
+            if (!Enum.TryParse<ActivityType>(activityType.Trim(), true, out var parsedType) ||
+                !Enum.IsDefined(typeof(ActivityType), parsedType))
+            {
+                throw new InvalidOperationException("Invalid activity type.");
+            }
+
+            var normalizedLimit = limit > 0 ? limit : 20;
+            var meetups = await _meetupRepository.GetByActivityTypeAndSuburbAsync(parsedType, suburb);
+
+            return meetups
+                .Select(meetup => BuildMatchDto(user, meetup))
+                .OrderByDescending(match => match.MatchScore)
+                .ThenBy(match => match.EventDate)
+                .ThenBy(match => match.StartTime)
+                .Take(normalizedLimit)
                 .ToList();
         }
 
@@ -297,6 +339,132 @@ namespace backend.Service
             }
 
             return activities;
+        }
+
+        private static MeetupMatchDto BuildMatchDto(AppUser user, MeetupEvent meetup)
+        {
+            var personalityScore = GetPersonalityCompatibilityScore(user, meetup.Creator);
+            var dayMatch = IsPreferredDayMatch(user.PreferredDaysOfWeek, meetup.EventDate);
+            var timeMatch = IsPreferredTimeMatch(user.PreferredTimeOfDay, meetup.StartTime);
+            var distanceMatch = IsPreferredDistanceMatch(user.PreferredDistanceKm, meetup.Creator?.PreferredDistanceKm);
+
+            var matchScore = CalculateMatchScore(personalityScore, dayMatch, timeMatch, distanceMatch);
+            var timeMatchScore = CalculateTimeMatchScore(dayMatch, timeMatch);
+
+            return PersonalityMapper.ToMeetupMatchDto(meetup, matchScore, timeMatchScore);
+        }
+
+        private static int GetPersonalityCompatibilityScore(AppUser user, AppUser? creator)
+        {
+            if (creator == null)
+            {
+                return 0;
+            }
+
+            return PersonalityMapper.GetPersonalityCompatibility(user, creator).OverallScore;
+        }
+
+        private static int CalculateMatchScore(
+            int personalityScore,
+            bool dayMatch,
+            bool timeMatch,
+            bool distanceMatch)
+        {
+            var score = 0;
+            score += (int)Math.Round(personalityScore / 100.0 * PersonalityWeight);
+            score += dayMatch ? DayPreferenceWeight : 0;
+            score += timeMatch ? TimePreferenceWeight : 0;
+            score += distanceMatch ? DistancePreferenceWeight : 0;
+            return score;
+        }
+
+        private static int CalculateTimeMatchScore(bool dayMatch, bool timeMatch)
+        {
+            if (dayMatch && timeMatch)
+            {
+                return 100;
+            }
+
+            if (dayMatch || timeMatch)
+            {
+                return 50;
+            }
+
+            return 0;
+        }
+
+        private static bool IsPreferredDistanceMatch(int? userPreferredKm, int? creatorPreferredKm)
+        {
+            if (!userPreferredKm.HasValue || !creatorPreferredKm.HasValue)
+            {
+                return false;
+            }
+
+            return creatorPreferredKm.Value <= userPreferredKm.Value;
+        }
+
+        private static bool IsPreferredDayMatch(string? preferredDays, DateTime eventDate)
+        {
+            if (string.IsNullOrWhiteSpace(preferredDays))
+            {
+                return false;
+            }
+
+            var normalized = preferredDays.Trim();
+            if (string.Equals(normalized, "Anytime", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var isWeekend = eventDate.DayOfWeek == DayOfWeek.Saturday || eventDate.DayOfWeek == DayOfWeek.Sunday;
+            if (string.Equals(normalized, "Weekend", StringComparison.OrdinalIgnoreCase))
+            {
+                return isWeekend;
+            }
+
+            if (string.Equals(normalized, "Weekday", StringComparison.OrdinalIgnoreCase))
+            {
+                return !isWeekend;
+            }
+
+            return false;
+        }
+
+        private static bool IsPreferredTimeMatch(string? preferredTimeOfDay, TimeSpan startTime)
+        {
+            if (string.IsNullOrWhiteSpace(preferredTimeOfDay))
+            {
+                return false;
+            }
+
+            var normalized = preferredTimeOfDay.Trim();
+            if (string.Equals(normalized, "Anytime", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var hour = startTime.Hours;
+            if (string.Equals(normalized, "Morning", StringComparison.OrdinalIgnoreCase))
+            {
+                return hour >= 5 && hour < 12;
+            }
+
+            if (string.Equals(normalized, "Afternoon", StringComparison.OrdinalIgnoreCase))
+            {
+                return hour >= 12 && hour < 17;
+            }
+
+            if (string.Equals(normalized, "Evening", StringComparison.OrdinalIgnoreCase))
+            {
+                return hour >= 17 && hour < 22;
+            }
+
+            if (string.Equals(normalized, "Night", StringComparison.OrdinalIgnoreCase))
+            {
+                return hour >= 22 || hour < 5;
+            }
+
+            return false;
         }
 
         public async Task<List<UserMeetupDto>> GetPendingParticipantsAsync(int meetupId)

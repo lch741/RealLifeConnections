@@ -28,6 +28,11 @@ namespace backend.Interfaces
         Task<List<MeetupEvent>> GetByActivityAsync(int activityId);
 
         /// <summary>
+        /// Get meetups by activity type and suburb.
+        /// </summary>
+        Task<List<MeetupEvent>> GetByActivityTypeAndSuburbAsync(ActivityType activityType, string suburb);
+
+        /// <summary>
         /// Get meetups created by a specific user.
         /// </summary>
         Task<List<MeetupEvent>> GetByCreatorAsync(int creatorId);

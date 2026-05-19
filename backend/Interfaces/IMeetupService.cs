@@ -41,6 +41,15 @@ namespace backend.Interfaces
         Task<List<MeetupEventDto>> GetUpcomingMeetupsAsync(int daysAhead = 30);
 
         /// <summary>
+        /// Get matched meetups based on hard filters and ranked by bonus conditions.
+        /// </summary>
+        Task<List<MeetupMatchDto>> GetMatchedMeetupsAsync(
+            ClaimsPrincipal principal,
+            string activityType,
+            string suburb,
+            int limit = 20);
+
+        /// <summary>
         /// Update an existing meetup event (creator only).
         /// </summary>
         Task<MeetupEventDto> UpdateMeetupAsync(ClaimsPrincipal principal, int meetupId, UpdateMeetupDto dto);

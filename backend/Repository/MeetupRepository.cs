@@ -51,6 +51,20 @@ namespace backend.Repository
                 .ToListAsync();
         }
 
+        public Task<List<MeetupEvent>> GetByActivityTypeAndSuburbAsync(ActivityType activityType, string suburb)
+        {
+            var normalizedSuburb = suburb.Trim();
+            return BaseQuery()
+                .Where(meetup =>
+                    meetup.Status != MeetupStatus.Cancelled &&
+                    meetup.Status != MeetupStatus.Completed &&
+                    meetup.Activities.Any(activity => activity.Type == activityType) &&
+                    EF.Functions.ILike(meetup.Suburb, normalizedSuburb))
+                .OrderBy(meetup => meetup.EventDate)
+                .ThenBy(meetup => meetup.StartTime)
+                .ToListAsync();
+        }
+
         public Task<List<MeetupEvent>> GetByCreatorAsync(int creatorId)
         {
             return BaseQuery()

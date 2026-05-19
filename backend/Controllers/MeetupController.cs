@@ -79,6 +79,31 @@ namespace backend.Controllers
             }
         }
 
+        [HttpGet("matched")]
+        public async Task<IActionResult> GetMatchedMeetups(
+            [FromQuery] string activityType,
+            [FromQuery] string suburb,
+            [FromQuery] int limit = 20)
+        {
+            try
+            {
+                var result = await _meetupService.GetMatchedMeetupsAsync(User, activityType, suburb, limit);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         [HttpPut("{meetupId:int}")]
         public async Task<IActionResult> Update(int meetupId, [FromBody] UpdateMeetupDto dto)
         {
