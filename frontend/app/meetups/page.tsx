@@ -976,7 +976,9 @@ function MeetupMatchPanel({
           </label>
 
           <label className="block">
-            <span className="text-sm font-semibold text-zinc-800">Limit</span>
+            <span className="text-sm font-semibold text-zinc-800">
+              Preferred max distance (km)
+            </span>
             <input
               className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
               type="number"
@@ -1239,18 +1241,22 @@ export default function MeetupHubPage() {
 
       setCreateForm((prev) => ({
         ...prev,
-        region: prev.region || data.region || defaultRegion,
-        suburb:
-          prev.suburb ||
-          data.suburb ||
-          getDefaultSuburb(data.region || defaultRegion),
+        region: data.region || defaultRegion,
+        suburb: data.suburb || getDefaultSuburb(data.region || defaultRegion),
+        maxDistanceKm:
+          typeof data.personality?.preferredDistanceKm === "number"
+            ? String(data.personality.preferredDistanceKm)
+            : prev.maxDistanceKm,
       }));
 
       setMatchFilters((prev) => ({
         ...prev,
-        region: prev.region || data.region || defaultRegion,
-        suburb:
-          prev.suburb || data.suburb || getDefaultSuburb(data.region || defaultRegion),
+        region: data.region || defaultRegion,
+        suburb: data.suburb || getDefaultSuburb(data.region || defaultRegion),
+        limit:
+          typeof data.personality?.preferredDistanceKm === "number"
+            ? String(data.personality.preferredDistanceKm)
+            : prev.limit,
       }));
 
       const meetups = await getCreatedMeetups();
