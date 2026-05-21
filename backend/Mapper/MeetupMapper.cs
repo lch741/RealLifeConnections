@@ -24,6 +24,7 @@ namespace backend.Mapper
                 StartTime = meetup.StartTime,
                 EndTime = meetup.EndTime,
                 MaxParticipants = meetup.MaxParticipants,
+                MaxDistanceKm = meetup.MaxDistanceKm,
                 CurrentParticipants = currentParticipants > 0 ? currentParticipants : meetup.Participants.Count,
                 Status = meetup.Status.ToString(),
                 ConfirmedAt = meetup.ConfirmedAt,
@@ -88,6 +89,7 @@ namespace backend.Mapper
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
                 MaxParticipants = dto.MaxParticipants,
+                MaxDistanceKm = dto.MaxDistanceKm,
                 Status = MeetupStatus.Open,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -139,6 +141,11 @@ namespace backend.Mapper
             if (dto.MaxParticipants.HasValue)
             {
                 meetup.MaxParticipants = dto.MaxParticipants.Value;
+            }
+
+            if (dto.MaxDistanceKm.HasValue)
+            {
+                meetup.MaxDistanceKm = dto.MaxDistanceKm.Value;
             }
 
             meetup.UpdatedAt = DateTime.UtcNow;

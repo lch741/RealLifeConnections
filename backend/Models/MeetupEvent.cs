@@ -48,6 +48,9 @@ namespace backend.Models
         // Capacity
         public int MaxParticipants { get; set; } = 10;
 
+        [Range(1, 1000)]
+        public int MaxDistanceKm { get; set; } = 20;
+
         // Metadata
         public MeetupStatus Status { get; set; } = MeetupStatus.Open;
         public DateTime? ConfirmedAt { get; set; }

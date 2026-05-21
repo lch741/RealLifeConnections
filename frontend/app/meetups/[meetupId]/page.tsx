@@ -247,6 +247,7 @@ export default function MeetupDetailPage() {
                         )}
                         {meetup.endTime ? ` - ${formatTimeInput(meetup.endTime)}` : ""}
                       </p>
+                      <p>Max distance: {meetup.maxDistanceKm} km</p>
                       <p>Host: {meetup.creatorName}</p>
                     </div>
 

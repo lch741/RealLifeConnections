@@ -22,6 +22,7 @@ namespace backend.DTO.Meetup
 
         public int MaxParticipants { get; set; }
         public int CurrentParticipants { get; set; }
+        public int MaxDistanceKm { get; set; }
 
         public string Status { get; set; } = "Open";
         public DateTime? ConfirmedAt { get; set; }

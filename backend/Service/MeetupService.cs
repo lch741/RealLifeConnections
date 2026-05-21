@@ -346,7 +346,7 @@ namespace backend.Service
             var personalityScore = GetPersonalityCompatibilityScore(user, meetup.Creator);
             var dayMatch = IsPreferredDayMatch(user.PreferredDaysOfWeek, meetup.EventDate);
             var timeMatch = IsPreferredTimeMatch(user.PreferredTimeOfDay, meetup.StartTime);
-            var distanceMatch = IsPreferredDistanceMatch(user.PreferredDistanceKm, meetup.Creator?.PreferredDistanceKm);
+            var distanceMatch = IsPreferredDistanceMatch(user.PreferredDistanceKm, meetup.MaxDistanceKm);
 
             var matchScore = CalculateMatchScore(personalityScore, dayMatch, timeMatch, distanceMatch);
             var timeMatchScore = CalculateTimeMatchScore(dayMatch, timeMatch);
@@ -393,14 +393,14 @@ namespace backend.Service
             return 0;
         }
 
-        private static bool IsPreferredDistanceMatch(int? userPreferredKm, int? creatorPreferredKm)
+        private static bool IsPreferredDistanceMatch(int? userPreferredKm, int? meetupMaxDistanceKm)
         {
-            if (!userPreferredKm.HasValue || !creatorPreferredKm.HasValue)
+            if (!userPreferredKm.HasValue || !meetupMaxDistanceKm.HasValue)
             {
                 return false;
             }
 
-            return creatorPreferredKm.Value <= userPreferredKm.Value;
+            return meetupMaxDistanceKm.Value <= userPreferredKm.Value;
         }
 
         private static bool IsPreferredDayMatch(string? preferredDays, DateTime eventDate)

@@ -57,6 +57,7 @@ type MeetupFormState = {
   startTime: string;
   endTime: string;
   maxParticipants: string;
+  maxDistanceKm: string;
   activities: MeetupFormActivity[];
 };
 
@@ -117,6 +118,7 @@ function createEmptyMeetupForm(region: string, suburb: string): MeetupFormState 
     startTime: "",
     endTime: "",
     maxParticipants: "10",
+    maxDistanceKm: "20",
     activities: [createActivity()],
   };
 }
@@ -303,6 +305,22 @@ function MeetupCreatePanel({
               value={createForm.maxParticipants}
               onChange={(event) =>
                 onChangeField("maxParticipants", event.target.value)
+              }
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-semibold text-zinc-800">
+              Maximum distance (km)
+            </span>
+            <input
+              className="mt-2 h-12 w-full rounded-md border border-zinc-300 px-3 text-base outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+              type="number"
+              min={1}
+              max={1000}
+              value={createForm.maxDistanceKm}
+              onChange={(event) =>
+                onChangeField("maxDistanceKm", event.target.value)
               }
             />
           </label>
@@ -507,6 +525,9 @@ function MeetupManagePanel({
                       {meetup.endTime
                         ? ` - ${formatTimeInput(meetup.endTime)}`
                         : ""}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-600">
+                      Max distance: {meetup.maxDistanceKm} km
                     </p>
                     {meetup.description ? (
                       <p className="mt-2 text-sm text-zinc-600">
@@ -731,6 +752,21 @@ function MeetupManagePanel({
                           value={editForm.maxParticipants}
                           onChange={(event) =>
                             onEditFieldChange("maxParticipants", event.target.value)
+                          }
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-xs font-semibold text-emerald-900">
+                          Maximum distance (km)
+                        </span>
+                        <input
+                          className="mt-2 h-11 w-full rounded-md border border-emerald-200 bg-white px-3 text-sm outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                          type="number"
+                          min={1}
+                          max={1000}
+                          value={editForm.maxDistanceKm}
+                          onChange={(event) =>
+                            onEditFieldChange("maxDistanceKm", event.target.value)
                           }
                         />
                       </label>
@@ -1016,6 +1052,9 @@ function MeetupMatchPanel({
                     meetup.startTime,
                   )}
                   {meetup.endTime ? ` - ${formatTimeInput(meetup.endTime)}` : ""}
+                </p>
+                <p className="mt-1 text-xs text-zinc-600">
+                  Max distance: {meetup.maxDistanceKm} km
                 </p>
                 {meetup.description ? (
                   <p className="mt-2 text-xs text-zinc-600">
@@ -1360,6 +1399,7 @@ export default function MeetupHubPage() {
         startTime: normalizeTimeValue(createForm.startTime),
         endTime: createForm.endTime ? normalizeTimeValue(createForm.endTime) : null,
         maxParticipants: Number(createForm.maxParticipants) || 10,
+        maxDistanceKm: Number(createForm.maxDistanceKm) || 20,
       };
 
       await createMeetup(payload);
@@ -1387,6 +1427,7 @@ export default function MeetupHubPage() {
       startTime: formatTimeInput(meetup.startTime),
       endTime: formatTimeInput(meetup.endTime),
       maxParticipants: String(meetup.maxParticipants),
+      maxDistanceKm: String(meetup.maxDistanceKm),
       activities: meetup.activities.map((activity) => ({
         id: createActivityId(),
         name: activity.name,
@@ -1454,6 +1495,7 @@ export default function MeetupHubPage() {
         startTime: normalizeTimeValue(editForm.startTime),
         endTime: editForm.endTime ? normalizeTimeValue(editForm.endTime) : null,
         maxParticipants: Number(editForm.maxParticipants) || 10,
+        maxDistanceKm: Number(editForm.maxDistanceKm) || 20,
       };
 
       await updateMeetup(meetupId, payload);

@@ -33,5 +33,8 @@ namespace backend.DTO.Meetup
 
         [Range(1, 1000)]
         public int? MaxParticipants { get; set; }
+
+        [Range(1, 1000)]
+        public int? MaxDistanceKm { get; set; }
     }
 }

@@ -18,6 +18,7 @@ export type CreateMeetupPayload = {
   startTime: string;
   endTime?: string | null;
   maxParticipants: number;
+  maxDistanceKm: number;
 };
 
 export type UpdateMeetupPayload = Partial<CreateMeetupPayload>;
@@ -65,6 +66,7 @@ export type MeetupEventDto = {
   endTime?: string | null;
   maxParticipants: number;
   currentParticipants: number;
+  maxDistanceKm: number;
   status: string;
   confirmedAt?: string | null;
   completedAt?: string | null;
