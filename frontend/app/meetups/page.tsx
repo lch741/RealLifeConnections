@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Toast, { type ToastState } from "@/components/Toast";
@@ -520,7 +521,7 @@ function MeetupManagePanel({
                     </span>
                     <Link
                       className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
-                      href={`/meetups/${meetup.id}`}
+                      href={`/meetups/${meetup.id}?tab=manage`}
                     >
                       View details
                     </Link>
@@ -1034,7 +1035,7 @@ function MeetupMatchPanel({
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link
                     className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
-                    href={`/meetups/${meetup.id}`}
+                    href={`/meetups/${meetup.id}?tab=match`}
                   >
                     View details
                   </Link>
@@ -1114,7 +1115,7 @@ function MeetupMatchPanel({
                   )}
                   <Link
                     className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
-                    href={`/meetups/${match.meetupId}`}
+                    href={`/meetups/${match.meetupId}?tab=match`}
                   >
                     View details
                   </Link>
@@ -1134,6 +1135,7 @@ function MeetupMatchPanel({
 }
 
 export default function MeetupHubPage() {
+  const searchParams = useSearchParams();
   const [toast, setToast] = useState<ToastState | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activePanel, setActivePanel] = useState<"create" | "manage" | "match">(
@@ -1229,6 +1231,13 @@ export default function MeetupHubPage() {
   useEffect(() => {
     loadProfileAndMeetups();
   }, []);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "create" || tabParam === "manage" || tabParam === "match") {
+      setActivePanel(tabParam);
+    }
+  }, [searchParams]);
 
   function guardVerified(actionLabel: string) {
     if (!profile?.isVerified) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Toast, { type ToastState } from "@/components/Toast";
@@ -37,6 +37,7 @@ function formatTimeInput(value?: string | null) {
 export default function MeetupDetailPage() {
   const params = useParams<{ meetupId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [toast, setToast] = useState<ToastState | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [meetup, setMeetup] = useState<MeetupEventDto | null>(null);
@@ -44,6 +45,13 @@ export default function MeetupDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const meetupId = useMemo(() => Number(params.meetupId), [params.meetupId]);
+  const backHref = useMemo(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "create" || tab === "manage" || tab === "match") {
+      return `/meetups?tab=${tab}`;
+    }
+    return "/meetups";
+  }, [searchParams]);
 
   function showToast(nextToast: ToastState) {
     setToast(nextToast);
@@ -182,7 +190,7 @@ export default function MeetupDetailPage() {
           <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
             <header className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <Link className="text-lg font-semibold tracking-wide" href="/meetups">
+                <Link className="text-lg font-semibold tracking-wide" href={backHref}>
                   RealLifeConnections
                 </Link>
                 <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
@@ -195,7 +203,7 @@ export default function MeetupDetailPage() {
               <div className="flex items-center gap-3">
                 <Link
                   className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-500"
-                  href="/meetups"
+                  href={backHref}
                 >
                   Back to meetups
                 </Link>
