@@ -79,6 +79,28 @@ namespace backend.Controllers
             }
         }
 
+        [HttpGet("joined")]
+        public async Task<IActionResult> GetJoinedByMe()
+        {
+            try
+            {
+                var result = await _meetupService.GetUserJoinedMeetupsAsync(User);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         [HttpGet("matched")]
         public async Task<IActionResult> GetMatchedMeetups(
             [FromQuery] string activityType,

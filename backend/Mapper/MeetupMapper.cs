@@ -84,7 +84,7 @@ namespace backend.Mapper
                 Suburb = dto.Suburb,
                 LocationName = dto.LocationName,
                 Activities = activities,
-                EventDate = dto.EventDate,
+                EventDate = DateTime.SpecifyKind(dto.EventDate, DateTimeKind.Utc),
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
                 MaxParticipants = dto.MaxParticipants,
@@ -123,7 +123,7 @@ namespace backend.Mapper
 
             if (dto.EventDate.HasValue)
             {
-                meetup.EventDate = dto.EventDate.Value;
+                meetup.EventDate = DateTime.SpecifyKind(dto.EventDate.Value, DateTimeKind.Utc);
             }
 
             if (dto.StartTime.HasValue)
