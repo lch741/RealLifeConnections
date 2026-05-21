@@ -464,13 +464,13 @@ export default function ProfilePage() {
               }
               onClick={() => {
                 if (profile?.isVerified) {
-                  router.push("/meetups/create");
+                  router.push("/meetups");
                 } else {
                   showToast({ tone: "error", message: "You must verify your avatar before creating or matching events." });
                 }
               }}
             >
-              Create / Match Event
+              Manage / Match Event
             </button>
             <button
               type="button"
