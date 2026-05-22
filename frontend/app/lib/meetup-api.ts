@@ -234,3 +234,12 @@ export function approveParticipant(meetupId: number, participantId: number) {
     },
   );
 }
+
+export function rejectParticipant(meetupId: number, participantId: number) {
+  return request<ApiMessage>(
+    `/api/meetups/${meetupId}/reject/${participantId}`,
+    {
+      method: "POST",
+    },
+  );
+}

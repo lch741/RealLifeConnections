@@ -14,6 +14,7 @@ import {
   getCreatedMeetups,
   getJoinedMeetups,
   getMatchedMeetups,
+  rejectParticipant,
   updateMeetup,
   updateMeetupStatus,
   quitMeetup,
@@ -142,6 +143,11 @@ function getDefaultSuburb(region: string) {
   return (
     nzLocations.find((location) => location.region === region)?.cities[0] ?? ""
   );
+}
+
+function getApprovedParticipantCount(meetup: MeetupEventDto) {
+  return meetup.participants.filter((participant) => participant.status === "Approved")
+    .length;
 }
 
 type MeetupCreatePanelProps = {
@@ -447,6 +453,7 @@ type MeetupManagePanelProps = {
   onDeleteMeetup: (meetupId: number) => void;
   onStatusUpdate: (meetupId: number, status: string) => void;
   onApproveParticipant: (meetupId: number, participantId: number) => void;
+  onRejectParticipant: (meetupId: number, participantId: number) => void;
   onUpdateMeetup: (meetupId: number) => void;
   onCancelEdit: () => void;
   onEditFieldChange: MeetupFieldChange;
@@ -465,6 +472,7 @@ function MeetupManagePanel({
   onDeleteMeetup,
   onStatusUpdate,
   onApproveParticipant,
+  onRejectParticipant,
   onUpdateMeetup,
   onCancelEdit,
   onEditFieldChange,
@@ -538,7 +546,7 @@ function MeetupManagePanel({
 
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
-                      {meetup.currentParticipants}/{meetup.maxParticipants} joined
+                      {getApprovedParticipantCount(meetup)}/{meetup.maxParticipants} joined
                     </span>
                     <Link
                       className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
@@ -622,6 +630,16 @@ function MeetupManagePanel({
                             disabled={isSubmitting}
                           >
                             Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
+                            onClick={() =>
+                              onRejectParticipant(meetup.id, participant.userId)
+                            }
+                            disabled={isSubmitting}
+                          >
+                            Reject
                           </button>
                         </div>
                       ))}
@@ -887,6 +905,7 @@ type MeetupMatchPanelProps = {
   matches: MeetupMatchDto[];
   joinedMeetups: MeetupEventDto[];
   joinedMeetupIds: number[];
+  joinedStatusByMeetupId: Map<number, string>;
   isSubmitting: boolean;
   onSubmit: (event: SimpleFormEvent) => void;
   onChangeFilters: (patch: Partial<MatchFiltersState>) => void;
@@ -900,6 +919,7 @@ function MeetupMatchPanel({
   matches,
   joinedMeetups,
   joinedMeetupIds,
+  joinedStatusByMeetupId,
   isSubmitting,
   onSubmit,
   onChangeFilters,
@@ -1044,9 +1064,14 @@ function MeetupMatchPanel({
                     <p className="mt-1 text-xs text-zinc-600">
                       Host: {meetup.creatorName}
                     </p>
+                    {joinedStatusByMeetupId.get(meetup.id) ? (
+                      <p className="mt-1 text-xs text-zinc-600">
+                        Status: {joinedStatusByMeetupId.get(meetup.id)}
+                      </p>
+                    ) : null}
                   </div>
                   <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
-                    {meetup.currentParticipants}/{meetup.maxParticipants}
+                    {getApprovedParticipantCount(meetup)}/{meetup.maxParticipants}
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-zinc-600">
@@ -1103,6 +1128,39 @@ function MeetupMatchPanel({
         <div className="grid gap-5 md:grid-cols-2">
           {matches.map((match) => {
             const isJoined = joinedMeetupIds.includes(match.meetupId);
+            const joinedStatus = joinedStatusByMeetupId.get(match.meetupId);
+            const isPending = joinedStatus === "Pending";
+            let actionNode: React.ReactNode;
+
+            if (isPending) {
+              actionNode = (
+                <span className="rounded-full bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700">
+                  Pending approval
+                </span>
+              );
+            } else if (isJoined) {
+              actionNode = (
+                <button
+                  type="button"
+                  className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
+                  onClick={() => onLeave(match.meetupId)}
+                  disabled={isSubmitting}
+                >
+                  Leave
+                </button>
+              );
+            } else {
+              actionNode = (
+                <button
+                  type="button"
+                  className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                  onClick={() => onJoin(match.meetupId)}
+                  disabled={isSubmitting}
+                >
+                  Join
+                </button>
+              );
+            }
             return (
               <div
                 key={match.meetupId}
@@ -1135,25 +1193,7 @@ function MeetupMatchPanel({
                   {match.currentParticipants}/{match.maxParticipants} joined
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  {isJoined ? (
-                    <button
-                      type="button"
-                      className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
-                      onClick={() => onLeave(match.meetupId)}
-                      disabled={isSubmitting}
-                    >
-                      Leave
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                      onClick={() => onJoin(match.meetupId)}
-                      disabled={isSubmitting}
-                    >
-                      Join
-                    </button>
-                  )}
+                  {actionNode}
                   <Link
                     className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
                     href={`/meetups/${match.meetupId}?tab=match`}
@@ -1189,6 +1229,20 @@ export default function MeetupHubPage() {
   const [editingMeetupId, setEditingMeetupId] = useState<number | null>(null);
   const [matches, setMatches] = useState<MeetupMatchDto[]>([]);
   const [joinedMeetupIds, setJoinedMeetupIds] = useState<number[]>([]);
+
+  const joinedStatusByMeetupId = useMemo(() => {
+    const map = new Map<number, string>();
+    const profileId = profile?.id;
+    joinedMeetups.forEach((meetup) => {
+      const status = meetup.participants.find((participant) =>
+        profileId ? participant.userId === profileId : false,
+      )?.status;
+      if (status) {
+        map.set(meetup.id, status);
+      }
+    });
+    return map;
+  }, [joinedMeetups, profile?.id]);
 
   const defaultRegion = getDefaultRegion();
   const defaultSuburb = getDefaultSuburb(defaultRegion);
@@ -1565,6 +1619,22 @@ export default function MeetupHubPage() {
     }
   }
 
+  async function handleRejectParticipant(meetupId: number, participantId: number) {
+    if (!guardVerified("rejecting participants")) return;
+
+    setIsSubmitting(true);
+    try {
+      await rejectParticipant(meetupId, participantId);
+      showToast({ tone: "success", message: "Participant rejected." });
+      await loadProfileAndMeetups();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to reject participant.";
+      showToast({ tone: "error", message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleMatchSearch(event: SimpleFormEvent) {
     event.preventDefault();
 
@@ -1720,6 +1790,7 @@ export default function MeetupHubPage() {
                 onDeleteMeetup={handleDeleteMeetup}
                 onStatusUpdate={handleStatusUpdate}
                 onApproveParticipant={handleApproveParticipant}
+                onRejectParticipant={handleRejectParticipant}
                 onUpdateMeetup={handleUpdateMeetup}
                 onCancelEdit={cancelEdit}
                 onEditFieldChange={handleEditFieldChange}
@@ -1736,6 +1807,7 @@ export default function MeetupHubPage() {
                 matches={matches}
                 joinedMeetups={joinedMeetups}
                 joinedMeetupIds={joinedMeetupIds}
+                joinedStatusByMeetupId={joinedStatusByMeetupId}
                 isSubmitting={isSubmitting}
                 onSubmit={handleMatchSearch}
                 onChangeFilters={(patch) =>

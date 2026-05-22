@@ -263,5 +263,27 @@ namespace backend.Controllers
             }
         }
 
+        [HttpPost("{meetupId:int}/reject/{participantId:int}")]
+        public async Task<IActionResult> RejectParticipant(int meetupId, int participantId)
+        {
+            try
+            {
+                await _meetupService.RejectParticipantAsync(User, meetupId, participantId);
+                return Ok(new { message = "Participant rejected." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
     }
 }

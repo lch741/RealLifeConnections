@@ -183,11 +183,6 @@ namespace backend.Service
                 throw new InvalidOperationException("Meetup is not open for joining.");
             }
 
-            if (await _meetupRepository.HasUserJoinedAsync(user.Id, meetupId))
-            {
-                throw new InvalidOperationException("You have already joined this meetup.");
-            }
-
             var activeParticipants = meetup.Participants.Count(participant =>
                 participant.Status != UserMeetup.ParticipantStatus.Left &&
                 participant.Status != UserMeetup.ParticipantStatus.Rejected);
@@ -195,6 +190,29 @@ namespace backend.Service
             if (activeParticipants >= meetup.MaxParticipants)
             {
                 throw new InvalidOperationException("Meetup is full.");
+            }
+
+            var existingParticipation = await _context.UserMeetups
+                .FirstOrDefaultAsync(item => item.MeetupEventId == meetupId && item.UserId == user.Id);
+
+            if (existingParticipation != null)
+            {
+                if (existingParticipation.Status == UserMeetup.ParticipantStatus.Left ||
+                    existingParticipation.Status == UserMeetup.ParticipantStatus.Rejected)
+                {
+                    existingParticipation.Status = UserMeetup.ParticipantStatus.Pending;
+                    existingParticipation.JoinedAt = DateTime.UtcNow;
+                    existingParticipation.IsConfirmed = false;
+                    existingParticipation.ConfirmedAt = null;
+
+                    _context.UserMeetups.Update(existingParticipation);
+                    await _context.SaveChangesAsync();
+
+                    existingParticipation.User = user;
+                    return MeetupMapper.ToUserMeetupDto(existingParticipation);
+                }
+
+                throw new InvalidOperationException("You have already joined this meetup.");
             }
 
             var userMeetup = new UserMeetup

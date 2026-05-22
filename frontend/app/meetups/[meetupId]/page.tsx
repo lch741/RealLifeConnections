@@ -11,6 +11,7 @@ import {
   deleteMeetup,
   getMeetup,
   quitMeetup,
+  rejectParticipant,
   updateMeetupStatus,
   type MeetupEventDto,
 } from "../../lib/meetup-api";
@@ -93,6 +94,28 @@ export default function MeetupDetailPage() {
   const isCreator = profile && meetup ? profile.id === meetup.creatorId : false;
   const canLeave =
     userParticipant && !["Left", "Rejected"].includes(userParticipant.status);
+  const approvedParticipants = useMemo(() => {
+    if (!meetup) return [];
+    return meetup.participants.filter(
+      (participant) => participant.status === "Approved",
+    );
+  }, [meetup]);
+  const pendingParticipants = useMemo(() => {
+    if (!meetup) return [];
+    const base = meetup.participants.filter(
+      (participant) => participant.status === "Pending",
+    );
+    if (isCreator) return base;
+    return profile?.id ? base.filter((participant) => participant.userId === profile.id) : [];
+  }, [isCreator, meetup, profile?.id]);
+  const removedParticipants = useMemo(() => {
+    if (!meetup) return [];
+    const base = meetup.participants.filter((participant) =>
+      ["Left", "Rejected"].includes(participant.status),
+    );
+    if (isCreator) return base;
+    return profile?.id ? base.filter((participant) => participant.userId === profile.id) : [];
+  }, [isCreator, meetup, profile?.id]);
 
   async function handleJoin() {
     if (!meetup) return;
@@ -146,6 +169,22 @@ export default function MeetupDetailPage() {
     }
   }
 
+  async function handleRejectParticipant(participantId: number) {
+    if (!meetup) return;
+
+    setIsSubmitting(true);
+    try {
+      await rejectParticipant(meetup.id, participantId);
+      showToast({ tone: "success", message: "Participant rejected." });
+      await loadMeetup();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to reject participant.";
+      showToast({ tone: "error", message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleStatusChange(status: string) {
     if (!meetup) return;
 
@@ -175,6 +214,33 @@ export default function MeetupDetailPage() {
       showToast({ tone: "error", message });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  let primaryAction: React.ReactNode = null;
+  if (!isCreator) {
+    if (canLeave) {
+      primaryAction = (
+        <button
+          type="button"
+          className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
+          onClick={handleLeave}
+          disabled={isSubmitting}
+        >
+          Leave meetup
+        </button>
+      );
+    } else {
+      primaryAction = (
+        <button
+          type="button"
+          className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+          onClick={handleJoin}
+          disabled={isSubmitting}
+        >
+          Join meetup
+        </button>
+      );
     }
   }
 
@@ -232,7 +298,7 @@ export default function MeetupDetailPage() {
                         </h2>
                       </div>
                       <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        {meetup.currentParticipants}/{meetup.maxParticipants} joined
+                        {approvedParticipants.length}/{meetup.maxParticipants} joined
                       </span>
                     </div>
 
@@ -269,26 +335,7 @@ export default function MeetupDetailPage() {
                     </div>
 
                     <div className="mt-6 flex flex-wrap gap-3">
-                      {isCreator ? null : canLeave ? (
-                        <button
-                          type="button"
-                          className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
-                          onClick={handleLeave}
-                          disabled={isSubmitting}
-                        >
-                          Leave meetup
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                          onClick={handleJoin}
-                          disabled={isSubmitting}
-                        >
-                          Join meetup
-                        </button>
-                      )}
-
+                      {primaryAction}
                       <button
                         type="button"
                         className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-500"
@@ -306,17 +353,17 @@ export default function MeetupDetailPage() {
                         Participants
                       </p>
                       <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
-                        {meetup.participants.length} total
+                        {approvedParticipants.length} total
                       </span>
                     </div>
 
-                    {meetup.participants.length === 0 ? (
+                    {approvedParticipants.length === 0 ? (
                       <p className="mt-4 text-sm text-zinc-600">
                         No participants yet.
                       </p>
                     ) : (
                       <div className="mt-4 space-y-3">
-                        {meetup.participants.map((participant) => (
+                        {approvedParticipants.map((participant) => (
                           <div
                             key={participant.id}
                             className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3"
@@ -326,17 +373,17 @@ export default function MeetupDetailPage() {
                                 {participant.userName}
                               </p>
                               <p className="text-xs text-zinc-500">
-                                {participant.status} | Joined {formatDateInput(participant.joinedAt)}
+                                Approved | Joined {formatDateInput(participant.joinedAt)}
                               </p>
                             </div>
-                            {isCreator && participant.status === "Pending" ? (
+                            {isCreator ? (
                               <button
                                 type="button"
-                                className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                                onClick={() => handleApproveParticipant(participant.userId)}
+                                className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
+                                onClick={() => handleRejectParticipant(participant.userId)}
                                 disabled={isSubmitting}
                               >
-                                Approve
+                                Kick
                               </button>
                             ) : null}
                           </div>
@@ -344,6 +391,84 @@ export default function MeetupDetailPage() {
                       </div>
                     )}
                   </div>
+                  {pendingParticipants.length > 0 ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+                          Pending
+                        </p>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-700">
+                          {pendingParticipants.length} total
+                        </span>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {pendingParticipants.map((participant) => (
+                          <div
+                            key={participant.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-white px-4 py-3"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-zinc-800">
+                                {participant.userName}
+                              </p>
+                              <p className="text-xs text-zinc-500">
+                                Pending | Joined {formatDateInput(participant.joinedAt)}
+                              </p>
+                            </div>
+                            {isCreator ? (
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                                  onClick={() => handleApproveParticipant(participant.userId)}
+                                  disabled={isSubmitting}
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  type="button"
+                                  className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
+                                  onClick={() => handleRejectParticipant(participant.userId)}
+                                  disabled={isSubmitting}
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {removedParticipants.length > 0 ? (
+                    <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-6 shadow-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-700">
+                          Removed
+                        </p>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-rose-700">
+                          {removedParticipants.length} total
+                        </span>
+                      </div>
+                      <div className="mt-4 space-y-3">
+                        {removedParticipants.map((participant) => (
+                          <div
+                            key={participant.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-200 bg-white px-4 py-3"
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-zinc-800">
+                                {participant.userName}
+                              </p>
+                              <p className="text-xs text-zinc-500">
+                                {participant.status} | Joined {formatDateInput(participant.joinedAt)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="rounded-2xl border border-zinc-200 bg-white/90 p-6 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
