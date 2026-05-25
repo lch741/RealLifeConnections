@@ -161,7 +161,8 @@ namespace backend.Mapper
                 EventDate = meetup.EventDate,
                 StartTime = meetup.StartTime,
                 EndTime = meetup.EndTime,
-                CurrentParticipants = meetup.Participants.Count,
+                CurrentParticipants = meetup.Participants.Count(participant =>
+                    participant.Status == UserMeetup.ParticipantStatus.Approved),
                 MaxParticipants = meetup.MaxParticipants,
                 Status = meetup.Status.ToString(),
                 MatchScore = matchScore,
