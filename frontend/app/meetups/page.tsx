@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import TopBar from "@/components/TopBar";
 import Toast, { type ToastState } from "@/components/Toast";
 import { nzLocations } from "../lib/nz-locations";
 import {
@@ -1711,7 +1712,9 @@ export default function MeetupHubPage() {
           </div>
 
           <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
-            <header className="flex flex-wrap items-center justify-between gap-4">
+            <TopBar profile={profile} />
+
+            <header className="mt-6 flex flex-wrap items-center justify-between gap-4">
               <div>
                 <Link className="text-lg font-semibold tracking-wide" href="/profile">
                   RealLifeConnections
@@ -1722,17 +1725,6 @@ export default function MeetupHubPage() {
                 <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
                   Create, manage, and match from one command center.
                 </h1>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="rounded-full border border-zinc-300 bg-white px-3 py-1 text-xs font-semibold text-zinc-700">
-                  {profile?.isVerified ? "Verified" : "Unverified"}
-                </span>
-                <Link
-                  className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-500"
-                  href="/profile"
-                >
-                  Back to profile
-                </Link>
               </div>
             </header>
 

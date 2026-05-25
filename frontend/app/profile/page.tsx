@@ -16,6 +16,7 @@ import {
 import { categories, cultures, genders, type CultureOption } from "../lib/profile-options";
 import { nzLocations } from "../lib/nz-locations";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import TopBar from "@/components/TopBar";
 type InterestSelectionState = {
   categoryId: number;
   interests: string;
@@ -149,6 +150,7 @@ function buildPersonalityPayload(personality: PersonalityState) {
   };
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -451,7 +453,8 @@ export default function ProfilePage() {
     <ProtectedRoute>
     <main className="min-h-screen bg-[#f8faf7] text-zinc-950">
       <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8 lg:px-10">
-        <header className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-5">
+        <TopBar profile={profile} showBackLink={false} />
+        <header className="mt-6 flex items-center justify-between gap-4 border-b border-zinc-200 pb-5">
           <div className="flex items-center gap-4">
             <Link className="text-lg font-semibold tracking-wide" href="/">
               RealLifeConnections
@@ -489,13 +492,6 @@ export default function ProfilePage() {
               Create
             </button>
           </div>
-          <button
-            type="button"
-            className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm transition hover:border-zinc-500"
-            onClick={logoutAndRedirect}
-          >
-            Logout
-          </button>
         </header>
 
         <Toast toast={toast} />
@@ -546,14 +542,7 @@ export default function ProfilePage() {
                       }}
                     />
                     <div className="grid grid-cols-2 gap-2">
-                      {!avatarFile ? (
-                        <label
-                          htmlFor="avatar-file-input"
-                          className="flex h-11 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-zinc-300 bg-zinc-50 px-3 text-sm font-semibold text-zinc-700 transition hover:border-emerald-400 hover:bg-emerald-50"
-                        >
-                          Choose photo
-                        </label>
-                      ) : (
+                      {avatarFile ? (
                         <button
                           type="button"
                           className="h-11 rounded-md border-2 border-dashed border-red-300 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:border-red-400 hover:bg-red-100"
@@ -564,6 +553,13 @@ export default function ProfilePage() {
                         >
                           Unselect photo
                         </button>
+                      ) : (
+                        <label
+                          htmlFor="avatar-file-input"
+                          className="flex h-11 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-zinc-300 bg-zinc-50 px-3 text-sm font-semibold text-zinc-700 transition hover:border-emerald-400 hover:bg-emerald-50"
+                        >
+                          Choose photo
+                        </label>
                       )}
                       <button
                         type="button"
@@ -598,21 +594,21 @@ export default function ProfilePage() {
                   <canvas ref={canvasRef} className="hidden" />
 
                   <div className="grid grid-cols-2 gap-2">
-                    {!isCameraActive ? (
-                      <button
-                        type="button"
-                        className="h-11 rounded-md border border-zinc-400 bg-white px-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
-                        onClick={startCamera}
-                      >
-                        Open camera
-                      </button>
-                    ) : (
+                    {isCameraActive ? (
                       <button
                         type="button"
                         className="h-11 rounded-md border border-red-300 bg-red-50 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
                         onClick={stopCamera}
                       >
                         Close camera
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="h-11 rounded-md border border-zinc-400 bg-white px-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100"
+                        onClick={startCamera}
+                      >
+                        Open camera
                       </button>
                     )}
                     {cameraCaptureUrl ? (

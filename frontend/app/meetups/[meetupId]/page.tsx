@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import TopBar from "@/components/TopBar";
 import Toast, { type ToastState } from "@/components/Toast";
 import {
   applyMeetup,
@@ -254,6 +255,8 @@ export default function MeetupDetailPage() {
           </div>
 
           <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
+            <TopBar profile={profile} />
+
             <header className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <Link className="text-lg font-semibold tracking-wide" href={backHref}>
