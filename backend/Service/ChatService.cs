@@ -31,7 +31,8 @@ namespace backend.Service
                 throw new InvalidOperationException("This conversation is closed.");
             }
 
-            if (convo.MeetupEventId.HasValue && convo.EndsAt.HasValue && convo.EndsAt.Value < DateTime.UtcNow)
+            var meetupEndsAt = GetMeetupEndsAt(convo);
+            if (convo.MeetupEventId.HasValue && meetupEndsAt.HasValue && meetupEndsAt.Value < DateTime.UtcNow)
             {
                 // Mark closed for clarity
                 convo.IsClosed = true;
@@ -49,6 +50,34 @@ namespace backend.Service
             await _repo.AddMessageAsync(message);
 
             convo.LastMessageAt = DateTime.UtcNow;
+        }
+
+        private static DateTime? GetMeetupEndsAt(Conversation conversation)
+        {
+            var meetup = conversation.MeetupEvent;
+            if (meetup == null)
+            {
+                return conversation.EndsAt;
+            }
+
+            if (meetup.Status == MeetupStatus.Completed && meetup.CompletedAt.HasValue)
+            {
+                return meetup.CompletedAt.Value;
+            }
+
+            if (!meetup.EndTime.HasValue)
+            {
+                return null;
+            }
+
+            var baseDate = meetup.EventDate.Date;
+            var endsAt = baseDate.Add(meetup.EndTime.Value);
+            if (meetup.EndTime.Value < meetup.StartTime)
+            {
+                endsAt = endsAt.AddDays(1);
+            }
+
+            return DateTime.SpecifyKind(endsAt, DateTimeKind.Utc);
         }
 
         public async Task<List<MessageResponseDto>> GetMessagesAsync(int userId, int otherUserId)

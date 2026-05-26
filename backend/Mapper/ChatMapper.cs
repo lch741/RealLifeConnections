@@ -19,6 +19,7 @@ namespace backend.Mapper
 
         public static ConversationDto ToConversation(Conversation conversation, int currentUserId)
         {
+            var meetupEndsAt = GetMeetupEndsAt(conversation);
             return new ConversationDto
             {
                 ConversationId = conversation.Id,
@@ -26,9 +27,37 @@ namespace backend.Mapper
                 OtherUserName = string.Empty,
                 LastMessageAt = conversation.LastMessageAt,
                 IsClosed = conversation.IsClosed,
-                EndsAt = conversation.EndsAt,
-                IsExpired = conversation.EndsAt.HasValue && conversation.EndsAt.Value < DateTime.UtcNow
+                EndsAt = meetupEndsAt ?? conversation.EndsAt,
+                IsExpired = meetupEndsAt.HasValue && meetupEndsAt.Value < DateTime.UtcNow
             };
+        }
+
+        private static DateTime? GetMeetupEndsAt(Conversation conversation)
+        {
+            var meetup = conversation.MeetupEvent;
+            if (meetup == null)
+            {
+                return conversation.EndsAt;
+            }
+
+            if (meetup.Status == MeetupStatus.Completed && meetup.CompletedAt.HasValue)
+            {
+                return meetup.CompletedAt.Value;
+            }
+
+            if (!meetup.EndTime.HasValue)
+            {
+                return null;
+            }
+
+            var baseDate = meetup.EventDate.Date;
+            var endsAt = baseDate.Add(meetup.EndTime.Value);
+            if (meetup.EndTime.Value < meetup.StartTime)
+            {
+                endsAt = endsAt.AddDays(1);
+            }
+
+            return DateTime.SpecifyKind(endsAt, DateTimeKind.Utc);
         }
     }
 }

@@ -17,6 +17,7 @@ namespace backend.Repository
         public async Task<Conversation?> GetConversationAsync(int user1Id, int user2Id)
         {
             return await _context.Conversations
+                .Include(c => c.MeetupEvent)
                 .FirstOrDefaultAsync(c =>
                     (c.User1Id == user1Id && c.User2Id == user2Id) ||
                     (c.User1Id == user2Id && c.User2Id == user1Id));
@@ -69,6 +70,7 @@ namespace backend.Repository
         public async Task<List<Conversation>> GetUserConversationsAsync(int userId)
         {
             return await _context.Conversations
+                .Include(c => c.MeetupEvent)
                 .Where(c => c.User1Id == userId || c.User2Id == userId)
                 .OrderByDescending(c => c.LastMessageAt)
                 .ToListAsync();
