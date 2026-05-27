@@ -23,6 +23,16 @@ namespace backend.Repository
                     (c.User1Id == user2Id && c.User2Id == user1Id));
         }
 
+        public async Task<Conversation?> GetMeetupConversationAsync(int user1Id, int user2Id, int meetupEventId)
+        {
+            return await _context.Conversations
+                .Include(c => c.MeetupEvent)
+                .FirstOrDefaultAsync(c =>
+                    c.MeetupEventId == meetupEventId &&
+                    ((c.User1Id == user1Id && c.User2Id == user2Id) ||
+                     (c.User1Id == user2Id && c.User2Id == user1Id)));
+        }
+
         public async Task<Conversation> CreateConversationAsync(int user1Id, int user2Id)
         {
             var convo = new Conversation
@@ -59,6 +69,12 @@ namespace backend.Repository
             return message;
         }
 
+        public async Task UpdateConversationAsync(Conversation conversation)
+        {
+            _context.Conversations.Update(conversation);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<List<Message>> GetMessagesAsync(int conversationId)
         {
             return await _context.Messages
@@ -71,6 +87,8 @@ namespace backend.Repository
         {
             return await _context.Conversations
                 .Include(c => c.MeetupEvent)
+                .Include(c => c.User1)
+                .Include(c => c.User2)
                 .Where(c => c.User1Id == userId || c.User2Id == userId)
                 .OrderByDescending(c => c.LastMessageAt)
                 .ToListAsync();

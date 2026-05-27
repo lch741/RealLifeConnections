@@ -8,6 +8,9 @@ namespace backend.DTOs
     public class ConversationDto
     {
         public int ConversationId { get; set; }
+        public int? MeetupEventId { get; set; }
+        public string? MeetupTitle { get; set; }
+        public string? MeetupStatus { get; set; }
         public int OtherUserId { get; set; }
         public string? OtherUserName { get; set; }
         public DateTime LastMessageAt { get; set; }

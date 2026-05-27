@@ -84,6 +84,27 @@ namespace backend.Controllers
             }
         }
 
+        [HttpGet("meetups/{meetupId:int}/{otherUserId:int}")]
+        public async Task<IActionResult> GetMeetupMessages(int meetupId, int otherUserId)
+        {
+            try
+            {
+                int userId = GetCurrentUserId();
+
+                var messages = await _service.GetMeetupMessagesAsync(userId, otherUserId, meetupId);
+
+                return Ok(messages);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         [HttpGet("conversations")]
         public async Task<IActionResult> GetConversations()
         {

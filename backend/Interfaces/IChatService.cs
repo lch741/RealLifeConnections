@@ -11,6 +11,7 @@ namespace backend.Interfaces
     {
         Task SendMessageAsync(int senderId, SendMessageDto dto);
         Task<List<MessageResponseDto>> GetMessagesAsync(int userId, int otherUserId);
+        Task<List<MessageResponseDto>> GetMeetupMessagesAsync(int userId, int otherUserId, int meetupId);
         Task<List<ConversationDto>> GetConversationsAsync(int userId);
     }
 }

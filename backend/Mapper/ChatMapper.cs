@@ -20,11 +20,17 @@ namespace backend.Mapper
         public static ConversationDto ToConversation(Conversation conversation, int currentUserId)
         {
             var meetupEndsAt = GetMeetupEndsAt(conversation);
+            var otherUser = conversation.User1Id == currentUserId
+                ? conversation.User2
+                : conversation.User1;
             return new ConversationDto
             {
                 ConversationId = conversation.Id,
+                MeetupEventId = conversation.MeetupEventId,
+                MeetupTitle = conversation.MeetupEvent?.Title,
+                MeetupStatus = conversation.MeetupEvent?.Status.ToString(),
                 OtherUserId = conversation.User1Id == currentUserId ? conversation.User2Id : conversation.User1Id,
-                OtherUserName = string.Empty,
+                OtherUserName = otherUser?.UserName,
                 LastMessageAt = conversation.LastMessageAt,
                 IsClosed = conversation.IsClosed,
                 EndsAt = meetupEndsAt ?? conversation.EndsAt,

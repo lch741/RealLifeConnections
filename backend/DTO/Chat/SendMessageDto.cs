@@ -8,6 +8,7 @@ namespace backend.DTOs
     public class SendMessageDto
     {
         public int ReceiverId { get; set; }
+        public int? MeetupEventId { get; set; }
         public required string Content { get; set; }
     }
 }
