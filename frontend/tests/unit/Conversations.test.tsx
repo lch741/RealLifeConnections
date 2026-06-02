@@ -71,7 +71,9 @@ describe("Conversations Page", () => {
 
   it("should render the conversations header", () => {
     render(<ConversationsPage />);
-    expect(screen.getByText(/Conversations/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Meetup chats/i }),
+    ).toBeInTheDocument();
   });
 
   it("should render the top bar", () => {
