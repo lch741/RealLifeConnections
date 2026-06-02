@@ -57,6 +57,24 @@ namespace Backend.Tests
             return factory;
         }
 
+        internal static async Task MarkUserVerifiedAsync(IntegrationWebApplicationFactory factory, string email)
+        {
+            using var scope = factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
+            var storedUser = await context.Users.SingleAsync(user => user.Email == email.ToLowerInvariant());
+            storedUser.IsVerified = true;
+            context.Users.Update(storedUser);
+            await context.SaveChangesAsync();
+        }
+
+        internal static async Task<int> GetUserIdAsync(IntegrationWebApplicationFactory factory, string email)
+        {
+            using var scope = factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
+            var storedUser = await context.Users.SingleAsync(user => user.Email == email.ToLowerInvariant());
+            return storedUser.Id;
+        }
+
         internal sealed record AuthenticatedUser(string Email, string UserName, string Token);
     }
 }
