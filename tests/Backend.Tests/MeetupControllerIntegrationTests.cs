@@ -5,10 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using backend.Data;
 using backend.DTO.Meetup;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Backend.Tests
@@ -22,7 +19,7 @@ namespace Backend.Tests
             using var client = factory.CreateClient();
 
             var auth = await IntegrationTestHelpers.RegisterAndLoginAsync(client, "meetup-user@example.com", "meetupuser");
-            await MarkUserVerifiedAsync(factory, auth.Email);
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, auth.Email);
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
 
             var created = await CreateMeetupAsync(client);
@@ -42,7 +39,7 @@ namespace Backend.Tests
             using var client = factory.CreateClient();
 
             var auth = await IntegrationTestHelpers.RegisterAndLoginAsync(client, "meetup-update@example.com", "meetupupdate");
-            await MarkUserVerifiedAsync(factory, auth.Email);
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, auth.Email);
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
 
             var created = await CreateMeetupAsync(client);
@@ -68,7 +65,7 @@ namespace Backend.Tests
             using var client = factory.CreateClient();
 
             var auth = await IntegrationTestHelpers.RegisterAndLoginAsync(client, "meetup-status@example.com", "meetupstatus");
-            await MarkUserVerifiedAsync(factory, auth.Email);
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, auth.Email);
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.Token);
 
             var created = await CreateMeetupAsync(client);
@@ -82,6 +79,127 @@ namespace Backend.Tests
             Assert.NotNull(updated);
             Assert.Equal("Confirmed", updated!.Status);
             Assert.NotNull(updated.ConfirmedAt);
+        }
+
+        [Fact]
+        public async Task ApplyMeetupAndGetJoinedByMe_ReturnsJoinedMeetup()
+        {
+            using var factory = IntegrationTestHelpers.CreateFactory();
+            using var creatorClient = factory.CreateClient();
+            using var participantClient = factory.CreateClient();
+
+            var creatorAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(creatorClient, "meetup-host@example.com", "meetuphost");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, creatorAuth.Email);
+            creatorClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", creatorAuth.Token);
+
+            var meetup = await CreateMeetupAsync(creatorClient);
+
+            var participantAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(participantClient, "meetup-joiner@example.com", "meetupjoiner");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, participantAuth.Email);
+            participantClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", participantAuth.Token);
+
+            var applyResponse = await participantClient.PostAsync($"/api/meetups/{meetup.Id}/apply", null);
+            Assert.Equal(HttpStatusCode.OK, applyResponse.StatusCode);
+
+            var joinedResponse = await participantClient.GetAsync("/api/meetups/joined");
+            Assert.Equal(HttpStatusCode.OK, joinedResponse.StatusCode);
+
+            var joinedMeetups = await joinedResponse.Content.ReadFromJsonAsync<MeetupEventDto[]>();
+            Assert.NotNull(joinedMeetups);
+            Assert.Contains(joinedMeetups!, item => item.Id == meetup.Id);
+        }
+
+        [Fact]
+        public async Task QuitMeetup_UpdatesParticipantStatus()
+        {
+            using var factory = IntegrationTestHelpers.CreateFactory();
+            using var creatorClient = factory.CreateClient();
+            using var participantClient = factory.CreateClient();
+
+            var creatorAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(creatorClient, "meetup-quit-host@example.com", "meetupquithost");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, creatorAuth.Email);
+            creatorClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", creatorAuth.Token);
+
+            var meetup = await CreateMeetupAsync(creatorClient);
+
+            var participantAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(participantClient, "meetup-quit-user@example.com", "meetupquituser");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, participantAuth.Email);
+            participantClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", participantAuth.Token);
+
+            var applyResponse = await participantClient.PostAsync($"/api/meetups/{meetup.Id}/apply", null);
+            Assert.Equal(HttpStatusCode.OK, applyResponse.StatusCode);
+
+            var quitResponse = await participantClient.PostAsync($"/api/meetups/{meetup.Id}/quit", null);
+            Assert.Equal(HttpStatusCode.OK, quitResponse.StatusCode);
+
+            var refreshedResponse = await creatorClient.GetAsync($"/api/meetups/{meetup.Id}");
+            Assert.Equal(HttpStatusCode.OK, refreshedResponse.StatusCode);
+
+            var refreshed = await refreshedResponse.Content.ReadFromJsonAsync<MeetupEventDto>();
+            Assert.NotNull(refreshed);
+            Assert.Contains(refreshed!.Participants, participant => participant.Status == "Left");
+        }
+
+        [Fact]
+        public async Task ApproveParticipant_UpdatesParticipantStatus()
+        {
+            using var factory = IntegrationTestHelpers.CreateFactory();
+            using var creatorClient = factory.CreateClient();
+            using var participantClient = factory.CreateClient();
+
+            var creatorAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(creatorClient, "meetup-approve-host@example.com", "meetupapprovehost");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, creatorAuth.Email);
+            creatorClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", creatorAuth.Token);
+
+            var meetup = await CreateMeetupAsync(creatorClient);
+
+            var participantAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(participantClient, "meetup-approve-user@example.com", "meetupapproveuser");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, participantAuth.Email);
+            participantClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", participantAuth.Token);
+
+            var applyResponse = await participantClient.PostAsync($"/api/meetups/{meetup.Id}/apply", null);
+            Assert.Equal(HttpStatusCode.OK, applyResponse.StatusCode);
+
+            var participantId = await IntegrationTestHelpers.GetUserIdAsync(factory, participantAuth.Email);
+            var approveResponse = await creatorClient.PostAsync($"/api/meetups/{meetup.Id}/approve/{participantId}", null);
+            Assert.Equal(HttpStatusCode.OK, approveResponse.StatusCode);
+
+            var approved = await approveResponse.Content.ReadFromJsonAsync<UserMeetupDto>();
+            Assert.NotNull(approved);
+            Assert.Equal("Approved", approved!.Status);
+            Assert.True(approved.IsConfirmed);
+        }
+
+        [Fact]
+        public async Task RejectParticipant_UpdatesParticipantStatus()
+        {
+            using var factory = IntegrationTestHelpers.CreateFactory();
+            using var creatorClient = factory.CreateClient();
+            using var participantClient = factory.CreateClient();
+
+            var creatorAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(creatorClient, "meetup-reject-host@example.com", "meetuprejecthost");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, creatorAuth.Email);
+            creatorClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", creatorAuth.Token);
+
+            var meetup = await CreateMeetupAsync(creatorClient);
+
+            var participantAuth = await IntegrationTestHelpers.RegisterAndLoginAsync(participantClient, "meetup-reject-user@example.com", "meetuprejectuser");
+            await IntegrationTestHelpers.MarkUserVerifiedAsync(factory, participantAuth.Email);
+            participantClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", participantAuth.Token);
+
+            var applyResponse = await participantClient.PostAsync($"/api/meetups/{meetup.Id}/apply", null);
+            Assert.Equal(HttpStatusCode.OK, applyResponse.StatusCode);
+
+            var participantId = await IntegrationTestHelpers.GetUserIdAsync(factory, participantAuth.Email);
+            var rejectResponse = await creatorClient.PostAsync($"/api/meetups/{meetup.Id}/reject/{participantId}", null);
+            Assert.Equal(HttpStatusCode.OK, rejectResponse.StatusCode);
+
+            var refreshedResponse = await creatorClient.GetAsync($"/api/meetups/{meetup.Id}");
+            Assert.Equal(HttpStatusCode.OK, refreshedResponse.StatusCode);
+
+            var refreshed = await refreshedResponse.Content.ReadFromJsonAsync<MeetupEventDto>();
+            Assert.NotNull(refreshed);
+            Assert.Contains(refreshed!.Participants, participant => participant.Status == "Rejected");
         }
 
         private static async Task<MeetupEventDto> CreateMeetupAsync(HttpClient client)
@@ -110,16 +228,5 @@ namespace Backend.Tests
             Assert.Equal("Integration test meetup", meetup!.Title);
             return meetup;
         }
-
-        private static async Task MarkUserVerifiedAsync(IntegrationWebApplicationFactory factory, string email)
-        {
-            using var scope = factory.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<ApplicationDBContext>();
-            var storedUser = await context.Users.SingleAsync(user => user.Email == email.ToLowerInvariant());
-            storedUser.IsVerified = true;
-            context.Users.Update(storedUser);
-            await context.SaveChangesAsync();
-        }
-
     }
 }

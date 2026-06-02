@@ -237,6 +237,72 @@ namespace Backend.Tests
 
         #endregion
 
+        #region GetJoinedByMe Tests
+        [Fact]
+        public async Task GetJoinedByMe_ReturnsOkResult_WhenSuccessful()
+        {
+            SetUser();
+            var expected = new List<MeetupEventDto>
+            {
+                new MeetupEventDto
+                {
+                    Id = 2,
+                    Title = "Joined meetup",
+                    Region = "TestRegion",
+                    Suburb = "TestSuburb",
+                    Activities = new List<ActivityDto>
+                    {
+                        new ActivityDto { Id = 1, Name = "Coffee" }
+                    },
+                    EventDate = DateTime.UtcNow.Date.AddDays(1),
+                    StartTime = new TimeSpan(9, 0, 0),
+                    MaxParticipants = 5,
+                    CreatorId = 1,
+                    CreatorName = "tester"
+                }
+            };
+
+            _mockMeetupService
+                .Setup(s => s.GetUserJoinedMeetupsAsync(It.IsAny<ClaimsPrincipal>()))
+                .ReturnsAsync(expected);
+
+            var result = await _controller.GetJoinedByMe();
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var value = Assert.IsType<List<MeetupEventDto>>(ok.Value);
+            Assert.Single(value);
+            Assert.Equal(2, value[0].Id);
+        }
+
+        [Fact]
+        public async Task GetJoinedByMe_ReturnsBadRequest_WhenServiceThrows()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.GetUserJoinedMeetupsAsync(It.IsAny<ClaimsPrincipal>()))
+                .ThrowsAsync(new InvalidOperationException("Invalid request"));
+
+            var result = await _controller.GetJoinedByMe();
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Invalid request", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task GetJoinedByMe_ReturnsUnauthorized_WhenUserNotAuthenticated()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.GetUserJoinedMeetupsAsync(It.IsAny<ClaimsPrincipal>()))
+                .ThrowsAsync(new UnauthorizedAccessException("Not authorized"));
+
+            var result = await _controller.GetJoinedByMe();
+
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.Equal("Not authorized", unauthorized.Value);
+        }
+        #endregion
+
         #region Update Tests
         [Fact]
         public async Task Update_ReturnsOkResult_WhenUpdateSucceeds()
@@ -376,6 +442,20 @@ namespace Backend.Tests
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Invalid status", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task UpdateStatus_ReturnsUnauthorized_WhenUserNotAuthenticated()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.UpdateMeetupStatusAsync(It.IsAny<ClaimsPrincipal>(), 1, "Open"))
+                .ThrowsAsync(new UnauthorizedAccessException("Not authorized"));
+
+            var result = await _controller.UpdateStatus(1, "Open");
+
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.Equal("Not authorized", unauthorized.Value);
         }
         #endregion
 
@@ -524,6 +604,48 @@ namespace Backend.Tests
                 .ThrowsAsync(new UnauthorizedAccessException("Not authorized"));
 
             var result = await _controller.ApproveParticipant(5, 22);
+
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.Equal("Not authorized", unauthorized.Value);
+        }
+
+        [Fact]
+        public async Task RejectParticipant_ReturnsOkResult_WhenRejectSucceeds()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.RejectParticipantAsync(It.IsAny<ClaimsPrincipal>(), 5, 22))
+                .Returns(Task.CompletedTask);
+
+            var result = await _controller.RejectParticipant(5, 22);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.NotNull(ok.Value);
+        }
+
+        [Fact]
+        public async Task RejectParticipant_ReturnsBadRequest_WhenRejectFails()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.RejectParticipantAsync(It.IsAny<ClaimsPrincipal>(), 5, 22))
+                .ThrowsAsync(new InvalidOperationException("Participant not found."));
+
+            var result = await _controller.RejectParticipant(5, 22);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Participant not found.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task RejectParticipant_ReturnsUnauthorized_WhenUserNotAuthenticated()
+        {
+            SetUser();
+            _mockMeetupService
+                .Setup(s => s.RejectParticipantAsync(It.IsAny<ClaimsPrincipal>(), 5, 22))
+                .ThrowsAsync(new UnauthorizedAccessException("Not authorized"));
+
+            var result = await _controller.RejectParticipant(5, 22);
 
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
             Assert.Equal("Not authorized", unauthorized.Value);
