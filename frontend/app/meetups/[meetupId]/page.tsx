@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import TopBar from "@/components/TopBar";
 import Toast, { type ToastState } from "@/components/Toast";
@@ -36,7 +36,7 @@ function formatTimeInput(value?: string | null) {
   return value.slice(0, 5);
 }
 
-export default function MeetupDetailPage() {
+function MeetupDetailPageContent() {
   const params = useParams<{ meetupId: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -578,5 +578,13 @@ export default function MeetupDetailPage() {
         </div>
       </main>
     </ProtectedRoute>
+  );
+}
+
+export default function MeetupDetailPage() {
+  return (
+    <Suspense fallback={null}>
+      <MeetupDetailPageContent />
+    </Suspense>
   );
 }

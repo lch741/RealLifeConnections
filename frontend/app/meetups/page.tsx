@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import TopBar from "@/components/TopBar";
 import Toast, { type ToastState } from "@/components/Toast";
@@ -1216,7 +1216,7 @@ function MeetupMatchPanel({
   );
 }
 
-export default function MeetupHubPage() {
+function MeetupHubPageContent() {
   const searchParams = useSearchParams();
   const [toast, setToast] = useState<ToastState | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -1813,5 +1813,13 @@ export default function MeetupHubPage() {
         </div>
       </main>
     </ProtectedRoute>
+  );
+}
+
+export default function MeetupHubPage() {
+  return (
+    <Suspense fallback={null}>
+      <MeetupHubPageContent />
+    </Suspense>
   );
 }
